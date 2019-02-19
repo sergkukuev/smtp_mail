@@ -8,7 +8,7 @@ all: clean server client
 
 # Launch server
 server:
-	$(C) $(STD) $(DEBUG) server.c -o server
+	$(C) $(STD) $(DEBUG) server.c sockets.c -o server
 
 # Launch test client
 client:
