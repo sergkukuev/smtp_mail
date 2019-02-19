@@ -4,6 +4,7 @@
 #include <sys/socket.h>
 #include <arpa/inet.h>
 #include <netdb.h>
+#include "fcntl.h"
 
 #include <string.h>
 #include <errno.h>
@@ -15,6 +16,7 @@
 #define ERR_SOCKOPT -2
 #define ERR_BIND -3
 #define ERR_LISTEN -4
+#define ERR_FCNTL -5
 
 // other defines
 #define BACKLOG_SIZE 3
@@ -36,6 +38,15 @@ int create_serv_socket(struct addrinfo* inst)
 	int opt = 1;
 	if (setsockopt(s_fd, SOL_SOCKET, SO_REUSEADDR, &opt, sizeof(opt)) == -1)
 		return ERR_SOCKOPT;
+
+	// get flags
+	int flags = fcntl(s_fd, F_GETFL, 0);
+	if (flags == -1)
+		return ERR_FCNTL;
+
+	//set non block flag
+	if (fcntl(s_fd, F_SETFL, flags | O_NONBLOCK))
+		return ERR_FCNTL;
 
 	if (bind(s_fd, inst->ai_addr, inst->ai_addrlen) == -1)
 		return ERR_BIND;
@@ -62,6 +73,9 @@ void serv_sock_error(int err)
 			break;
 		case ERR_LISTEN:
 			perror("listen() failed");
+			break;
+		case ERR_FCNTL:
+			perror("fcntl() failed");
 			break;
 		default:
 			perror("undefined error");
