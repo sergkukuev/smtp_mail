@@ -1,14 +1,14 @@
 #ifndef __SOCKETS_H__
 #define __SOCKETS_H__
 
-// node of any list
-struct my_node {
-    void* data;
-    struct my_node* next;
+// node of file descriptor
+struct fd_node {
+    int fd;
+    struct fd_note* next;
 };
 
-// sockets initialization by getaddrinfo()
+// server sockets initialization by getaddrinfo()
 // returns head-pointer of list
-struct my_node* sockets_init(void);
+struct fd_node* init_serv_sockets(void);
 
 #endif
