@@ -1,4 +1,5 @@
 #include "sockets.h"
+#include "handlers.h"
 
 #include <sys/types.h>
 #include <sys/socket.h>
@@ -143,22 +144,34 @@ struct cs_node_t* init_client_sockets(struct ss_node_t* ss_list, int* max_fd)
 	return head;
 }
 
+// checkers message queue
 bool check_mq(mqd_t* mq, fd_set* readfds)
 {
 	// stub
 	return false;
 }
 
+// checkers listeners socket list
 bool check_ls_list(struct cs_node_t* list, fd_set* readfds)
 {
 	// stub
 	return false;
 }
 
+// checkers server socket list
 bool check_ss_list(struct cs_node_t* list, fd_set* readfds, fd_set* writefds)
 {
-	// stub
-	return false;
+	for (struct cs_node_t* i = list; i != NULL; i = i->next) {
+		if (FD_ISSET(i->cs.fd, readfds)) {
+			i->cs.flag = false;
+			main_handler(&i->cs);
+		}
+		if (FD_ISSET(i->cs.fd, writefds)) {
+			i->cs.flag = true;
+			main_handler(&i->cs);
+		}
+	}
+	return true;
 }
 
 // parser select()
