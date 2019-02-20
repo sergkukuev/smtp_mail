@@ -1,8 +1,7 @@
 #include "sockets.h"
 #include "process.h"
 
-#include <stdlib.h>
-#include <stdio.h>
+#include "common.h"
 
 #include <errno.h>
 
@@ -11,11 +10,11 @@
 
 int init_server(void)
 {
-    struct ss_node_t* head_fd = init_serv_sockets();
-    if (head_fd == NULL)
+    struct ss_node_t* fds = init_serv_sockets();
+    if (fds == NULL)
         return SERVER_FAILED;
 
-    pid_t pid = create_process(head_fd);
+    pid_t pid = create_process(fds);
     if (pid == -1)
         return SERVER_FAILED;
 

@@ -2,8 +2,6 @@
 #include "handlers.h"
 
 #include <sys/types.h>
-#include <sys/socket.h>
-#include <arpa/inet.h>
 #include <netdb.h>
 #include <fcntl.h>
 
@@ -19,11 +17,11 @@
 int create_serv_socket(struct addrinfo* inst)
 {
 	void* addr = &((struct sockaddr_in*)inst->ai_addr)->sin_addr;
-    char ip_str[INET_ADDRSTRLEN];
+    char ip_str[INET6_ADDRSTRLEN];
 
 	// get readable ip 
 	inet_ntop(inst->ai_family, addr, ip_str, sizeof(ip_str));
-	
+
 	// create file descriptor of socket
 	int s_fd = socket(inst->ai_family, inst->ai_socktype, inst->ai_protocol);
 	if (s_fd == -1)
@@ -80,15 +78,19 @@ void serv_sock_error(int err)
 }
 
 // init server sockets by getaddrinfo()
-struct ss_node_t* init_serv_sockets(void)
+struct ss_node_t* init_serv_sockets()
 {
 	struct ss_node_t* head = NULL;
-	char* port = "2525";	// sockets port
     struct addrinfo* hai;   // host address info pointer
     struct addrinfo sai;    // sockets address info
+	char* port = SERVER_PORT;
+	// ((struct sockaddr_in*)sai.ai_addr)->sin_addr.s_addr = inet_addr(SERVER_ADDR);
+
+	printf("address: %s\n", SERVER_ADDR);
+	printf("port: %s\n", SERVER_PORT);
 
     memset(&sai, 0, sizeof(sai));
-    sai.ai_family = PF_UNSPEC;	// undefined type: ipv4 or ipv6
+    sai.ai_family = AF_UNSPEC;	// undefined type: ipv4 or ipv6
     sai.ai_socktype = SOCK_STREAM;
     sai.ai_flags = AI_PASSIVE;	// network address no specified
 

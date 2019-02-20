@@ -7,9 +7,15 @@
 #include <stdlib.h>
 #include <stdbool.h>
 
+#include <sys/socket.h>
+#include <arpa/inet.h>
+#include <netinet/in.h>
+
 #include <mqueue.h>
 
 // server data
+#define SERVER_ADDR "0.0.0.0"
+#define SERVER_PORT "2525"
 #define BUFFER_SIZE 1024
 #define BACKLOG_SIZE 3
 
@@ -64,6 +70,11 @@ struct process_t {
     // lists of clients sockets
     struct cs_node_t* ss_list;
     struct cs_node_t* ls_list;
+};
+
+// structure server data    
+struct my_server_t {
+
 };
 
 #endif

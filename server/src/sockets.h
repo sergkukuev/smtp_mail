@@ -5,7 +5,7 @@
 
 // server sockets initialization by getaddrinfo()
 // returns head-pointer of list
-struct ss_node_t* init_serv_sockets(void);
+struct ss_node_t* init_serv_sockets();
 
 // client sockets initialization
 // returns head-pointer of list
