@@ -84,9 +84,9 @@ void serv_sock_error(int err)
 }
 
 // init server sockets by getaddrinfo()
-struct fd_node* init_serv_sockets(void)
+struct ss_node_t* init_serv_sockets(void)
 {
-	struct fd_node* head = NULL;
+	struct ss_node_t* head = NULL;
 	char* port = "2525";	// sockets port
     struct addrinfo* hai;   // host address info pointer
     struct addrinfo sai;    // sockets address info
@@ -106,7 +106,7 @@ struct fd_node* init_serv_sockets(void)
 		if (s_fd >= 0) {
 			// successfully creating	
 			printf("socket created (%d)\n", s_fd);
-			struct fd_node* node = malloc(sizeof &node);
+			struct ss_node_t* node = malloc(sizeof &node);
 			node->fd = s_fd;
 			node->next = head;
 			head = node;

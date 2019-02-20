@@ -10,7 +10,7 @@
 
 int init_server(void)
 {
-    struct fd_node* head_fd = init_serv_sockets();
+    struct ss_node_t* head_fd = init_serv_sockets();
     if (head_fd == NULL)
         return SERVER_FAILED;
 
