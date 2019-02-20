@@ -128,7 +128,7 @@ struct cs_data_t create_client_socket(int fd, int state, bool need_msg)
 }
 
 // init client sockets by server sockets
-struct cs_node_t* init_client_sockets(struct ss_node_t* ss_list)
+struct cs_node_t* init_client_sockets(struct ss_node_t* ss_list, int* max_fd)
 {
 	struct cs_node_t* head = NULL;
 	for (struct ss_node_t* i = ss_list; i != NULL; i = i->next) {
@@ -137,6 +137,9 @@ struct cs_node_t* init_client_sockets(struct ss_node_t* ss_list)
 		node->next = head;
 		head = node;
 		printf("client socket created (%d)\n", node->cs.fd);
+		// calc maximal file descriptor
+		if (node->cs.fd > *(max_fd))
+			*(max_fd) = node->cs.fd;
 	}
 	return head;
 }

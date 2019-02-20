@@ -11,6 +11,7 @@ struct process_t* init_process(pid_t pid, struct ss_node_t* ss)
     struct process_t* proc = (struct process_t*) malloc(sizeof *proc);
     proc->pid = pid;
     proc->worked = true;
+    proc->max_fd = -1;
 
     // mqueue initialize
     char qname[50];
@@ -27,11 +28,12 @@ struct process_t* init_process(pid_t pid, struct ss_node_t* ss)
     if (*(proc->mq) == -1) {
         perror("mq_open() failed");
         free(proc->mq);
-    }
+    } else if (*(proc->mq) > proc->max_fd)  // check fd message queue
+        proc->max_fd = *(proc->mq);
 
     // lists of sockets
     proc->ss_list = NULL;
-    proc->ls_list = init_client_sockets(ss);
+    proc->ls_list = init_client_sockets(ss, &proc->max_fd);
 
     // fd
     FD_ZERO(&(proc->l_set));
@@ -56,7 +58,7 @@ void run_process(struct process_t* proc)
             FD_SET(i->cs.fd, &(proc->s_set));
             FD_SET(i->cs.fd, &tmp);
         }
-
+        
         // TODO: select parse
         // select(MAX_FD, &(proc->s_set), &tmp, NULL, NULL);
     }

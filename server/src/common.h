@@ -50,6 +50,7 @@ struct cs_node_t {
 struct process_t {
     pid_t pid;
     bool worked;
+    int max_fd;
 
     // sets
     fd_set l_set;   // listener
