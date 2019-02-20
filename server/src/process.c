@@ -9,7 +9,7 @@
 // process initialize
 struct process_t* init_process(pid_t pid, struct ss_node_t* ss) 
 {
-    struct process_t* proc = (struct process_t*) malloc(sizeof &proc);
+    struct process_t* proc = (struct process_t*) malloc(sizeof *proc);
     proc->pid = pid;
     // lists of sockets
     proc->ss_list = ss;
@@ -25,7 +25,7 @@ struct process_t* init_process(pid_t pid, struct ss_node_t* ss)
     attr.mq_maxmsg = 10;
     attr.mq_msgsize = BUFFER_SIZE;
 
-    proc->mq = (mqd_t*) malloc(sizeof &proc->mq);
+    proc->mq = malloc(sizeof *proc->mq);
     *(proc->mq) = mq_open(proc->mq_name, O_CREAT | O_RDONLY | O_NONBLOCK, 0644, &attr);    // 0644: write, read, read
     if (*(proc->mq) == -1) {
         perror("mq_open() failed");
@@ -39,7 +39,6 @@ struct process_t* init_process(pid_t pid, struct ss_node_t* ss)
 void free_process(struct process_t* proc)
 {
     // TODO: free sockets
-
     mq_close(*(proc->mq));
     mq_unlink(proc->mq_name);
 
@@ -64,7 +63,7 @@ pid_t create_process(struct ss_node_t* fd_socket)
         }
         // process-parent
         default:
-            printf("fork() success");
+            break;
     }
     return pid;
 }

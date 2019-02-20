@@ -100,11 +100,11 @@ struct ss_node_t* init_serv_sockets(void)
 		int s_fd = create_serv_socket(i);
 		if (s_fd >= 0) {
 			// successfully creating	
-			printf("server socket created (%d)\n", s_fd);
-			struct ss_node_t* node = malloc(sizeof &node);
+			struct ss_node_t* node = malloc(sizeof *node);
 			node->fd = s_fd;
 			node->next = head;
 			head = node;
+			printf("server socket created (%d)\n", s_fd);
 		} else {
 			serv_sock_error(s_fd);
 		}
@@ -120,8 +120,8 @@ struct cs_data_t create_client_socket(int fd, int state, bool need_msg)
 	cs.fd = fd;
 	cs.state = state;
 	if (need_msg) {
-		cs.message = malloc(sizeof &(cs.message));
-		cs.message->to = malloc(10 * sizeof &(cs.message->to));
+		cs.message = malloc(sizeof *cs.message);
+		cs.message->to = malloc(10 * sizeof(char));
 		cs.message->from = NULL;
 		cs.message->body = NULL;
 		cs.message->blen = 0;
@@ -134,12 +134,12 @@ struct cs_data_t create_client_socket(int fd, int state, bool need_msg)
 struct cs_node_t* init_client_sockets(struct ss_node_t* ss_list)
 {
 	struct cs_node_t* head = NULL;
-	for (struct ss_node_t* i = ss_list; i->next != NULL; i = i->next) {
-		printf("client socket created (%d)\n", i->fd);
-		struct cs_node_t* node = malloc(sizeof &node);
+	for (struct ss_node_t* i = ss_list; i != NULL; i = i->next) {
+		struct cs_node_t* node = malloc(sizeof *node);
 		node->cs = create_client_socket(i->fd, SOCKET_STATE_WAIT, 0);
 		node->next = head;
 		head = node;
+		printf("client socket created (%d)\n", node->cs.fd);
 	}
 	return head;
 }
