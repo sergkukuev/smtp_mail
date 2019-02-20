@@ -15,10 +15,10 @@ debug: server_d client_d
 
 # Launch server
 server_r:
-	$(CC) $(STD) $(RFLAGS) sockets.c server.c process.c handlers.c -o server $(PF)
+	$(CC) $(STD) $(RFLAGS) sockets.c smtp.c server.c process.c handlers.c -o server $(PF)
 
 server_d:
-	$(CC) $(STD) $(DFLAGS) sockets.c server.c process.c handlers.c -o server $(PF)
+	$(CC) $(STD) $(DFLAGS) sockets.c smtp.c server.c process.c handlers.c -o server $(PF)
 
 # Launch test client
 client_d:

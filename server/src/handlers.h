@@ -3,7 +3,23 @@
 
 #include "common.h"
 
-// main smtp handler (can parse all command)
-void main_handler(struct cs_data_t* cs);
+// base handlers
+int HELO_handle(struct cs_data_t* cs);
+int EHLO_handle(struct cs_data_t* cs);
+int MAIL_handle(struct cs_data_t* cs);
+int RCPT_handle(struct cs_data_t* cs);
+int DATA_handle(struct cs_data_t* cs);
+int NOOP_handle(struct cs_data_t* cs);
+int RSET_handle(struct cs_data_t* cs);
+int QUIT_handle(struct cs_data_t* cs);
+
+// connect with maildir folder
+int TEXT_handle(struct cs_data_t* cs);
+
+// undefined command
+int UNDEFINED_handle(struct cs_data_t* cs);
+
+// send client allowed command list
+int ALLOWED_handle(struct cs_data_t* cs);
 
 #endif

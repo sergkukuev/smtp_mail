@@ -1,0 +1,86 @@
+#include "handlers.h"
+#include "def_smpt.h"
+#include "smtp.h"
+
+// key word parser
+int parse_key_word(char* key)
+{
+    key[4] = '\0';  // crutch for compare
+    if (strcmp(key, STR_HELO) == 0)
+        return KEY_HELO;
+    if (strcmp(key, STR_EHLO) == 0)
+        return KEY_EHLO;
+    if (strcmp(key, STR_MAIL) == 0)
+        return KEY_MAIL;
+    if (strcmp(key, STR_RCPT) == 0)
+        return KEY_RCPT;
+    if (strcmp(key, STR_DATA) == 0)
+        return KEY_DATA;
+    if (strcmp(key, STR_NOOP) == 0)
+        return KEY_NOOP;
+    if (strcmp(key, STR_RSET) == 0)
+        return KEY_RSET;
+    if (strcmp(key, STR_QUIT) == 0)
+        return KEY_QUIT;
+    return KEY_FAILED;
+}
+
+// handle of key words
+void key_word_handle(struct cs_data_t* cs) 
+{
+    char* eol = strstr(cs->buf, "\r\n");
+    while(eol) {
+        eol[0] = '\0';
+        printf("client: %d, msg: %s\n", cs->fd, cs->buf);
+        if (!cs->inpmsg) {
+            char* msg = (char*) malloc(BUFFER_SIZE);
+            int err = 0;
+            strcpy(msg, cs->buf);
+            switch(parse_key_word(cs->buf)) {
+            case KEY_HELO:
+                err = HELO_handle(cs);
+                break;
+            case KEY_EHLO:
+                err = EHLO_handle(cs);
+                break;
+            case KEY_MAIL:
+                err = MAIL_handle(cs);
+                break;
+            case KEY_RCPT:
+                err = RCPT_handle(cs);
+                break;
+            case KEY_DATA:
+                err = DATA_handle(cs);
+                break;
+            case KEY_NOOP:
+                err = NOOP_handle(cs);
+                break;
+            case KEY_RSET:
+                err = RSET_handle(cs);
+                break;
+            case KEY_QUIT:  // exit session
+                err = QUIT_handle(cs);
+                return;
+            // undefined 
+            default:
+                UNDEFINED_handle(cs);
+            }
+            if (err < 0)
+                ALLOWED_handle(cs);
+            free(msg);
+        } else {
+            TEXT_handle(cs);
+        }
+        eol = strstr(cs->buf, "\r\n");
+        memmove(cs->buf, eol + 2, BUFFER_SIZE - (eol + 2 - cs->buf));
+    }
+    // set readfds flag
+    cs->flag = false;
+}
+
+// main smtp handler (can parse all command)
+void main_handle(struct cs_data_t* cs)
+{
+    // stub
+    return;
+}

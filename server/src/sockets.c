@@ -1,5 +1,5 @@
 #include "sockets.h"
-#include "handlers.h"
+#include "smtp.h"
 
 #include <sys/types.h>
 #include <netdb.h>
@@ -211,11 +211,11 @@ void handle_sockets(struct cs_node_t* list, fd_set* readfds, fd_set* writefds)
 	for (struct cs_node_t* i = list; i != NULL; i = i->next) {
 		if (FD_ISSET(i->cs.fd, readfds)) {
 			i->cs.flag = false;
-			main_handler(&i->cs);
+			main_handle(&i->cs);
 		}
 		if (FD_ISSET(i->cs.fd, writefds)) {
 			i->cs.flag = true;
-			main_handler(&i->cs);
+			main_handle(&i->cs);
 		}
 	}
 }
