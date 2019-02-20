@@ -49,14 +49,19 @@ struct cs_node_t {
 // struct of process data
 struct process_t {
     pid_t pid;
+    bool worked;
+
+    // sets
+    fd_set l_set;   // listener
+    fd_set s_set;   // socket
 
     // message queue params
     mqd_t* mq;
     char* mq_name;
 
-    // lists of sockets
-    struct ss_node_t* ss_list;
-    struct cs_node_t* cs_list;
+    // lists of clients sockets
+    struct cs_node_t* ss_list;
+    struct cs_node_t* ls_list;
 };
 
 #endif
