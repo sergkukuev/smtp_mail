@@ -23,7 +23,10 @@
 // socket state
 #define SOCKET_STATE_INIT 0
 #define SOCKET_STATE_WAIT 1
-#define SOCKET_STATE_CLOSED 2
+#define SOCKET_STATE_MAIL 2
+#define SOCKET_STATE_RCPT 3
+#define SOCKET_STATE_DATA 4
+#define SOCKET_STATE_CLOSED 5
 
 //struct of message
 struct msg_t {
