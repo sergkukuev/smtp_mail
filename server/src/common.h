@@ -54,8 +54,8 @@ struct process_t {
     int max_fd;
 
     // sets
-    fd_set l_set;   // listener
-    fd_set s_set;   // socket
+    fd_set writefds;
+    fd_set readfds;
 
     // message queue params
     mqd_t* mq;

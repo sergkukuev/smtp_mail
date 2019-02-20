@@ -145,28 +145,31 @@ struct cs_node_t* init_client_sockets(struct ss_node_t* ss_list, int* max_fd)
 
 bool check_mq(mqd_t* mq, fd_set* readfds)
 {
+	// stub
 	return false;
 }
 
 bool check_ls_list(struct cs_node_t* list, fd_set* readfds)
 {
+	// stub
 	return false;
 }
 
 bool check_ss_list(struct cs_node_t* list, fd_set* readfds, fd_set* writefds)
 {
+	// stub
 	return false;
 }
 
 // parser select()
-void parse_select(struct process_t* proc, fd_set* writefds)
+void parse_select(struct process_t* proc)
 {
 	struct timeval tv;	// timeout for select
 	tv.tv_sec = 60;
 	tv.tv_usec = 0;
 
 	// call select: can change timeout
-	int ndesc = select(proc->max_fd, &(proc->s_set), writefds, NULL, &tv);
+	int ndesc = select(proc->max_fd, &(proc->readfds), &(proc->writefds), NULL, &tv);
 	switch(ndesc) {
 		// error
 		case -1:
@@ -176,14 +179,14 @@ void parse_select(struct process_t* proc, fd_set* writefds)
 		case 0:
 			printf("timeout select()\n");
 			for (struct cs_node_t* i = proc->ss_list; i != NULL; i = i->next)
-				if (!FD_ISSET(i->cs.fd, &(proc->s_set)))
+				if (!FD_ISSET(i->cs.fd, &(proc->readfds)))
 					i->cs.state = SOCKET_STATE_CLOSED;
 			break;
 		// sockets ready - need checks
 		default: {
-			if (!check_mq(proc->mq, &proc->s_set))
-				if (!check_ls_list(proc->ls_list, &proc->s_set));
-					check_ss_list(proc->ss_list, &proc->s_set, writefds);
+			if (!check_mq(proc->mq, &proc->readfds))
+				if (!check_ls_list(proc->ls_list, &proc->readfds));
+					check_ss_list(proc->ss_list, &proc->readfds, &proc->writefds);
 		}
 	}
 }

@@ -35,10 +35,6 @@ struct process_t* init_process(pid_t pid, struct ss_node_t* ss)
     proc->ss_list = NULL;
     proc->ls_list = init_client_sockets(ss, &proc->max_fd);
 
-    // fd
-    FD_ZERO(&(proc->l_set));
-    FD_ZERO(&(proc->s_set));
-
     return proc;
 }
 
@@ -46,23 +42,22 @@ struct process_t* init_process(pid_t pid, struct ss_node_t* ss)
 void run_process(struct process_t* proc)
 {
     while(proc->worked) {
-        fd_set tmp;
-        FD_ZERO(&(proc->s_set));
-        FD_ZERO(&tmp);
+        FD_ZERO(&(proc->readfds));
+        FD_ZERO(&(proc->writefds));
 
         // set all sockets to ss_list
         for (struct cs_node_t* i = proc->ls_list; i != NULL; i = i->next)
-            FD_SET(i->cs.fd, &(proc->s_set));
+            FD_SET(i->cs.fd, &(proc->readfds));
         // set exists client socket
         for (struct cs_node_t* i = proc->ss_list; i != NULL; i = i->next) {
-            FD_SET(i->cs.fd, &(proc->s_set));
-            FD_SET(i->cs.fd, &tmp);
+            FD_SET(i->cs.fd, &(proc->readfds));
+            FD_SET(i->cs.fd, &(proc->writefds));
         }
         // set message queue
         if (proc->mq != NULL)
-            FD_SET(*(proc->mq), &(proc->s_set));
+            FD_SET(*(proc->mq), &(proc->readfds));
         // call select() inside
-        parse_select(proc, &tmp);
+        parse_select(proc);
     }
 }
 
