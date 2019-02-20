@@ -13,6 +13,7 @@
 #define ERR_BIND -3
 #define ERR_LISTEN -4
 #define ERR_FCNTL -5
+#define ERR_ACCEPT -6
 
 // creating server socket
 int create_serv_socket(struct addrinfo* inst)
@@ -68,6 +69,9 @@ void serv_sock_error(int err)
 			break;
 		case ERR_FCNTL:
 			perror("fcntl() failed");
+			break;
+		case ERR_ACCEPT:
+			perror("accept() failed");
 			break;
 		default:
 			perror("undefined error");
@@ -127,27 +131,34 @@ struct cs_data_t create_client_socket(int fd, int state, bool need_msg)
 	return cs;
 }
 
+// init one client socket and insert to head
+struct cs_node_t* init_client_socket(struct cs_node_t* head, int fd, int state, bool need_msg, int* max_fd)
+{
+	struct cs_node_t* node = malloc(sizeof *node);
+	node->cs = create_client_socket(fd, SOCKET_STATE_WAIT, false);
+	node->next = head;
+	head = node;
+	printf("client socket created (%d)\n", node->cs.fd);
+	// calc maximal file descriptor
+	if (max_fd != NULL)
+		if (node->cs.fd > *(max_fd))
+			*(max_fd) = node->cs.fd;
+	return head;
+}
+
 // init client sockets by server sockets
 struct cs_node_t* init_client_sockets(struct ss_node_t* ss_list, int* max_fd)
 {
 	struct cs_node_t* head = NULL;
-	for (struct ss_node_t* i = ss_list; i != NULL; i = i->next) {
-		struct cs_node_t* node = malloc(sizeof *node);
-		node->cs = create_client_socket(i->fd, SOCKET_STATE_WAIT, 0);
-		node->next = head;
-		head = node;
-		printf("client socket created (%d)\n", node->cs.fd);
-		// calc maximal file descriptor
-		if (node->cs.fd > *(max_fd))
-			*(max_fd) = node->cs.fd;
-	}
+	for (struct ss_node_t* i = ss_list; i != NULL; i = i->next)
+		head = init_client_socket(head, i->fd, SOCKET_STATE_WAIT, false, max_fd);
 	return head;
 }
 
-// checkers message queue
+// checkers message queue on exit command
 bool check_mq(mqd_t* mq, fd_set* readfds)
 {
-	if (*mq != NULL) {
+	if (mq != NULL) {
 		// receive message
 		if (FD_ISSET(*mq, readfds)) {
 			char buf[BUFFER_SIZE];
@@ -163,15 +174,37 @@ bool check_mq(mqd_t* mq, fd_set* readfds)
 	return false;
 }
 
-// checkers listeners socket list
-bool check_ls_list(struct cs_node_t* list, fd_set* readfds)
+// accept connections
+void accept_sockets(struct cs_node_t* list, struct cs_node_t* ss_list, fd_set* readfds, int* max_fd)
 {
-	// stub
-	return false;
+	for (struct cs_node_t* i = list; i != NULL; i = i->next) {
+		if (FD_ISSET(i->cs.fd, readfds)) {
+			// accept connection
+			// TODO: find example, how send address and len
+			int fd = -1;//accept(i->cs.fd, address, len);
+			if (fd == -1) {
+				serv_sock_error(ERR_ACCEPT);
+				continue;
+			}
+			// get flags
+			int flags = fcntl(fd, F_GETFL, 0); 
+			if (flags == -1) {
+				serv_sock_error(ERR_FCNTL);
+				continue;
+			}
+			// set nonblock flag
+			if (fcntl(fd, F_SETFL, flags | O_NONBLOCK) == -1) {
+				serv_sock_error(ERR_FCNTL);
+				continue;
+			}
+			// initialize
+			ss_list = init_client_socket(ss_list, fd, SOCKET_STATE_INIT, true, max_fd);
+		}
+	}
 }
 
-// checkers by handlers
-bool check_ss_list(struct cs_node_t* list, fd_set* readfds, fd_set* writefds)
+// handle connections
+void handle_sockets(struct cs_node_t* list, fd_set* readfds, fd_set* writefds)
 {
 	for (struct cs_node_t* i = list; i != NULL; i = i->next) {
 		if (FD_ISSET(i->cs.fd, readfds)) {
@@ -183,7 +216,6 @@ bool check_ss_list(struct cs_node_t* list, fd_set* readfds, fd_set* writefds)
 			main_handler(&i->cs);
 		}
 	}
-	return true;
 }
 
 // parser select()
@@ -209,10 +241,11 @@ void parse_select(struct process_t* proc)
 			break;
 		// sockets ready - need checks
 		default: {
-			proc->worked = !check_mq(proc->mq, &proc->readfds);
-			if (proc->worked)
-				if (!check_ls_list(proc->ls_list, &proc->readfds));
-					check_ss_list(proc->ss_list, &proc->readfds, &proc->writefds);
+			proc->worked = check_mq(proc->mq, &proc->readfds);
+			if (proc->worked) {
+				accept_sockets(proc->ls_list, proc->ss_list, &proc->readfds, &proc->max_fd);
+				handle_sockets(proc->ss_list, &proc->readfds, &proc->writefds);
+			}
 		}
 	}
 }
