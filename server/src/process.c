@@ -3,8 +3,7 @@
 
 #include <sys/types.h>
 #include <unistd.h>
-
-#define BUFFER_SIZE 1024
+#include <signal.h>
 
 // process initialize
 struct process_t* init_process(pid_t pid, struct ss_node_t* ss) 
@@ -35,6 +34,12 @@ struct process_t* init_process(pid_t pid, struct ss_node_t* ss)
     return proc;
 }
 
+// runner
+void run_process(struct process_t* proc)
+{
+
+}
+
 // cleanup
 void free_process(struct process_t* proc)
 {
@@ -43,6 +48,7 @@ void free_process(struct process_t* proc)
     mq_unlink(proc->mq_name);
 
     free(proc);
+    kill(getpid(), SIGTERM);
 }
 
 // process creating
@@ -58,7 +64,7 @@ pid_t create_process(struct ss_node_t* fd_socket)
         // process-child
         case 0: {
             struct process_t* proc = init_process(getpid(), fd_socket);
-            // run_process(proc);
+            run_process(proc);
             free_process(proc);
         }
         // process-parent

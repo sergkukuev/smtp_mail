@@ -13,9 +13,6 @@
 #define ERR_LISTEN -4
 #define ERR_FCNTL -5
 
-// other defines
-#define BACKLOG_SIZE 3
-
 // creating server socket
 int create_serv_socket(struct addrinfo* inst)
 {

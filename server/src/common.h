@@ -9,6 +9,10 @@
 
 #include <mqueue.h>
 
+// server data
+#define BUFFER_SIZE 1024
+#define BACKLOG_SIZE 3
+
 // socket state
 #define SOCKET_STATE_INIT 0
 #define SOCKET_STATE_WAIT 1
@@ -45,7 +49,7 @@ struct cs_node_t {
 // struct of process data
 struct process_t {
     pid_t pid;
-    
+
     // message queue params
     mqd_t* mq;
     char* mq_name;
