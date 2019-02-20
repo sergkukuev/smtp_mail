@@ -42,6 +42,7 @@ struct process_t* init_process(pid_t pid, struct ss_node_t* ss)
 void run_process(struct process_t* proc)
 {
     while(proc->worked) {
+        // clear fd
         FD_ZERO(&(proc->readfds));
         FD_ZERO(&(proc->writefds));
 
@@ -56,7 +57,7 @@ void run_process(struct process_t* proc)
         // set message queue
         if (proc->mq != NULL)
             FD_SET(*(proc->mq), &(proc->readfds));
-        // call select() inside
+        // call select() and proc->worked change inside
         parse_select(proc);
     }
 }
