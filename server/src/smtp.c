@@ -25,8 +25,9 @@ int parse_key_word(char* key)
     return KEY_FAILED;
 }
 
-// handle of key words
-void key_word_handle(struct cs_data_t* cs) 
+// parse key word and send result
+// send message
+void reply_handle(struct cs_data_t* cs) 
 {
     char* eol = strstr(cs->buf, "\r\n");
     while(eol) {
@@ -78,9 +79,27 @@ void key_word_handle(struct cs_data_t* cs)
     cs->flag = false;
 }
 
+// receive message
+void accept_handle(struct cs_data_t* cs, int bf_left)
+{
+    int nbytes = recv(cs->fd, cs->buf + cs->offset_buf, bf_left, 0);
+    switch (nbytes) {
+    case -1:
+        if (errno != EWOULDBLOCK)   cs->state = SOCKET_STATE_CLOSED;
+        break;
+    case 0:
+        cs->state = SOCKET_STATE_CLOSED;
+        break;
+    default:
+        if (strstr(cs->buf, "\r\n"))    cs->flag = true;
+        break;
+    }
+}
+
 // main smtp handler (can parse all command)
 void main_handle(struct cs_data_t* cs)
 {
-    // stub
-    return;
+    int bf_left = BUFFER_SIZE - cs->offset_buf - 1;
+    // send or receive
+    cs->flag ? reply_handle(cs) : accept_handle(cs, bf_left);
 }
