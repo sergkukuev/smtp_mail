@@ -16,6 +16,7 @@
 // socket state
 #define SOCKET_STATE_INIT 0
 #define SOCKET_STATE_WAIT 1
+#define SOCKET_STATE_CLOSED 2
 
 //struct of message
 struct msg_t {
@@ -36,7 +37,7 @@ struct ss_node_t {
 struct cs_data_t {
     int fd;
     int state;
-    int flag;
+    bool flag;     // false - read set fd, true - write set fd
     struct msg_t* message;
 };
 

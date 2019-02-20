@@ -58,9 +58,11 @@ void run_process(struct process_t* proc)
             FD_SET(i->cs.fd, &(proc->s_set));
             FD_SET(i->cs.fd, &tmp);
         }
-        
-        // TODO: select parse
-        // select(MAX_FD, &(proc->s_set), &tmp, NULL, NULL);
+        // set message queue
+        if (proc->mq != NULL)
+            FD_SET(*(proc->mq), &(proc->s_set));
+        // call select() inside
+        parse_select(proc, &tmp);
     }
 }
 

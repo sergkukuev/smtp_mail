@@ -52,8 +52,7 @@ int create_serv_socket(struct addrinfo* inst)
 // parse creating server socket
 void serv_sock_error(int err)
 {
-	switch (err)
-	{
+	switch (err) {
 		case ERR_SOCKET:
 			perror("socket() failed");
 			break;
@@ -142,4 +141,49 @@ struct cs_node_t* init_client_sockets(struct ss_node_t* ss_list, int* max_fd)
 			*(max_fd) = node->cs.fd;
 	}
 	return head;
+}
+
+bool check_mq(mqd_t* mq, fd_set* readfds)
+{
+	return false;
+}
+
+bool check_ls_list(struct cs_node_t* list, fd_set* readfds)
+{
+	return false;
+}
+
+bool check_ss_list(struct cs_node_t* list, fd_set* readfds, fd_set* writefds)
+{
+	return false;
+}
+
+// parser select()
+void parse_select(struct process_t* proc, fd_set* writefds)
+{
+	struct timeval tv;	// timeout for select
+	tv.tv_sec = 60;
+	tv.tv_usec = 0;
+
+	// call select: can change timeout
+	int ndesc = select(proc->max_fd, &(proc->s_set), writefds, NULL, &tv);
+	switch(ndesc) {
+		// error
+		case -1:
+			perror("select() failed");
+			break;
+		// no events - close sockets
+		case 0:
+			printf("timeout select()\n");
+			for (struct cs_node_t* i = proc->ss_list; i != NULL; i = i->next)
+				if (!FD_ISSET(i->cs.fd, &(proc->s_set)))
+					i->cs.state = SOCKET_STATE_CLOSED;
+			break;
+		// sockets ready - need checks
+		default: {
+			if (!check_mq(proc->mq, &proc->s_set))
+				if (!check_ls_list(proc->ls_list, &proc->s_set));
+					check_ss_list(proc->ss_list, &proc->s_set, writefds);
+		}
+	}
 }
