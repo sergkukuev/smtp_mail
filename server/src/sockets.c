@@ -147,7 +147,19 @@ struct cs_node_t* init_client_sockets(struct ss_node_t* ss_list, int* max_fd)
 // checkers message queue
 bool check_mq(mqd_t* mq, fd_set* readfds)
 {
-	// stub
+	if (*mq != NULL) {
+		// receive message
+		if (FD_ISSET(*mq, readfds)) {
+			char buf[BUFFER_SIZE];
+			memset(buf, 0x00, sizeof(buf));
+			int nbytes = mq_receive(*mq, buf, BUFFER_SIZE, NULL);
+			if (nbytes > 0) {
+				printf("receive message from mq: %s\n", buf);
+				if (strcmp(buf, "#") == 0)
+					return true;
+			}
+		}
+	}
 	return false;
 }
 
@@ -158,7 +170,7 @@ bool check_ls_list(struct cs_node_t* list, fd_set* readfds)
 	return false;
 }
 
-// checkers server socket list
+// checkers by handlers
 bool check_ss_list(struct cs_node_t* list, fd_set* readfds, fd_set* writefds)
 {
 	for (struct cs_node_t* i = list; i != NULL; i = i->next) {
@@ -197,7 +209,8 @@ void parse_select(struct process_t* proc)
 			break;
 		// sockets ready - need checks
 		default: {
-			if (!check_mq(proc->mq, &proc->readfds))
+			proc->worked = !check_mq(proc->mq, &proc->readfds);
+			if (proc->worked)
 				if (!check_ls_list(proc->ls_list, &proc->readfds));
 					check_ss_list(proc->ss_list, &proc->readfds, &proc->writefds);
 		}
