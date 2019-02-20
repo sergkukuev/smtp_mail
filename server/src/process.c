@@ -1,4 +1,5 @@
 #include "process.h"
+#include "sockets.h"
 
 #include <sys/types.h>
 #include <unistd.h>
@@ -10,6 +11,9 @@ struct process_t* init_process(pid_t pid, struct ss_node_t* ss)
 {
     struct process_t* proc = (struct process_t*) malloc(sizeof &proc);
     proc->pid = pid;
+    // lists of sockets
+    proc->ss_list = ss;
+    proc->cs_list = init_client_sockets(ss);
 
     // mqueue initialize
     char qname[50];
@@ -28,16 +32,13 @@ struct process_t* init_process(pid_t pid, struct ss_node_t* ss)
         free(proc->mq);
     }
 
-    // sync i/o multiplexing
-    FD_ZERO(&(proc->ss_set));
-    
     return proc;
 }
 
 // cleanup
 void free_process(struct process_t* proc)
 {
-    // TODO: free socket
+    // TODO: free sockets
 
     mq_close(*(proc->mq));
     mq_unlink(proc->mq_name);

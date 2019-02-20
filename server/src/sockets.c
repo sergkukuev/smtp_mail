@@ -100,7 +100,7 @@ struct ss_node_t* init_serv_sockets(void)
 		int s_fd = create_serv_socket(i);
 		if (s_fd >= 0) {
 			// successfully creating	
-			printf("socket created (%d)\n", s_fd);
+			printf("server socket created (%d)\n", s_fd);
 			struct ss_node_t* node = malloc(sizeof &node);
 			node->fd = s_fd;
 			node->next = head;
@@ -111,4 +111,35 @@ struct ss_node_t* init_serv_sockets(void)
 	}
     freeaddrinfo(hai);
     return head;
+}
+
+// init client sockets
+struct cs_data_t create_client_socket(int fd, int state, bool need_msg)
+{
+	struct cs_data_t cs;
+	cs.fd = fd;
+	cs.state = state;
+	if (need_msg) {
+		cs.message = malloc(sizeof &(cs.message));
+		cs.message->to = malloc(10 * sizeof &(cs.message->to));
+		cs.message->from = NULL;
+		cs.message->body = NULL;
+		cs.message->blen = 0;
+		cs.message->rnum = 0;
+	}
+	return cs;
+}
+
+// init client sockets by server sockets
+struct cs_node_t* init_client_sockets(struct ss_node_t* ss_list)
+{
+	struct cs_node_t* head = NULL;
+	for (struct ss_node_t* i = ss_list; i->next != NULL; i = i->next) {
+		printf("client socket created (%d)\n", i->fd);
+		struct cs_node_t* node = malloc(sizeof &node);
+		node->cs = create_client_socket(i->fd, SOCKET_STATE_WAIT, 0);
+		node->next = head;
+		head = node;
+	}
+	return head;
 }
