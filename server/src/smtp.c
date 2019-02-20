@@ -99,7 +99,40 @@ void accept_handle(struct cs_data_t* cs, int bf_left)
 // main smtp handler (can parse all command)
 void main_handle(struct cs_data_t* cs)
 {
+    // send greeting
+    if (cs->state == SOCKET_STATE_START) {
+        char bf[BUFFER_SIZE];
+        sprintf(bf, "%s %s SMTP CCSMTP\n", SMTP_220, SERVER_DOMAIN);
+        int nbytes = send(cs->fd, bf, strlen(bf), 0);
+        switch (nbytes) {
+        case -1:
+        case 0:
+            if (errno != EWOULDBLOCK)   cs->state = SOCKET_STATE_CLOSED;
+            break;
+        default: 
+            cs->state = SOCKET_STATE_INIT;
+            cs->flag = false;
+            break;
+        }
+        return;
+    }
+    // buffer fill
     int bf_left = BUFFER_SIZE - cs->offset_buf - 1;
+    if (bf_left == 0) {
+        char bf[BUFFER_SIZE];
+        sprintf(bf, SMTP_500);
+        int nbytes = send(cs->fd, bf, strlen(bf), 0);
+        switch (nbytes) {
+        case -1:
+        case 0:
+            if (errno != EWOULDBLOCK)   cs->state = SOCKET_STATE_CLOSED;
+            break;
+        default: 
+            cs->offset_buf = 0;
+            cs->flag = false;
+            break;
+        }
+    }
     // send or receive
     cs->flag ? reply_handle(cs) : accept_handle(cs, bf_left);
 }

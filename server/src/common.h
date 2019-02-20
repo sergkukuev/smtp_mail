@@ -16,6 +16,7 @@
 // server data
 #define SERVER_ADDR "0.0.0.0"
 #define SERVER_PORT "2525"
+#define SERVER_DOMAIN "myserver.ru"
 #define MAILDIR "../maildir/"
 #define BUFFER_SIZE 1024
 #define BACKLOG_SIZE 3
@@ -27,6 +28,7 @@
 #define SOCKET_STATE_RCPT 3
 #define SOCKET_STATE_DATA 4
 #define SOCKET_STATE_CLOSED 5
+#define SOCKET_STATE_START 6
 
 //struct of message
 struct msg_t {
