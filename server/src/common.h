@@ -20,4 +20,15 @@ struct cs_node_t {
     struct cs_node_t* next;
 };
 
+// struct of process data
+struct process_t {
+    pid_t pid;
+    // message queue params
+    mqd_t* mq;
+    char* mq_name;
+    fd_set ss_set;
+
+    struct ss_node_t* ss;
+};
+
 #endif
