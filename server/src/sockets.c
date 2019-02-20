@@ -6,11 +6,6 @@
 #include <netdb.h>
 #include <fcntl.h>
 
-#include <string.h>
-#include <errno.h>
-#include <stdio.h>
-#include <stdlib.h>
-
 // errors 
 #define ERR_SOCKET -1
 #define ERR_SOCKOPT -2

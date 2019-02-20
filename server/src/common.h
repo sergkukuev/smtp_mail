@@ -1,6 +1,11 @@
 #ifndef __COMMON_H__
 #define __COMMON_H__
 
+#include <string.h>
+#include <errno.h>
+#include <stdio.h>
+#include <stdlib.h>
+
 #include <mqueue.h>
 
 // node of server socket
