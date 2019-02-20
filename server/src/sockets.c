@@ -227,6 +227,10 @@ void parse_select(struct process_t* proc)
 	tv.tv_sec = 60;
 	tv.tv_usec = 0;
 
+	printf("forced determinate\n");
+	proc->worked = false;	// forced stop
+	return;
+
 	// call select: can change timeout
 	int ndesc = select(proc->max_fd, &(proc->readfds), &(proc->writefds), NULL, &tv);
 	switch(ndesc) {
