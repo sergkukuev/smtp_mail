@@ -2,6 +2,7 @@
 #include "smtp.h"
 
 #include <sys/types.h>
+#include <unistd.h>
 #include <netdb.h>
 #include <fcntl.h>
 
@@ -86,8 +87,8 @@ struct ss_node_t* init_serv_sockets()
 	char* port = SERVER_PORT;
 	// ((struct sockaddr_in*)sai.ai_addr)->sin_addr.s_addr = inet_addr(SERVER_ADDR);
 
-	printf("address: %s\n", SERVER_ADDR);
-	printf("port: %s\n", SERVER_PORT);
+	printf("Server(%d): address - %s\n", getpid(), SERVER_ADDR);
+	printf("Server(%d): port - %s\n", getpid(), SERVER_PORT);
 
     memset(&sai, 0, sizeof(sai));
     sai.ai_family = AF_UNSPEC;	// undefined type: ipv4 or ipv6
@@ -99,6 +100,7 @@ struct ss_node_t* init_serv_sockets()
         return NULL;
     }
     
+	int num = 0;
     for (struct addrinfo* i = hai; i != NULL; i = i->ai_next) {
 		int s_fd = create_serv_socket(i);
 		if (s_fd >= 0) {
@@ -107,11 +109,13 @@ struct ss_node_t* init_serv_sockets()
 			node->fd = s_fd;
 			node->next = head;
 			head = node;
-			printf("server socket created (%d)\n", s_fd);
+			num++;
+			printf("Server(%d): server socket created (fd = %d)\n", getpid(), s_fd);
 		} else {
 			serv_sock_error(s_fd);
 		}
 	}
+	printf("Server(%d): total server sockets %d\n", getpid(), num);
     freeaddrinfo(hai);
     return head;
 }
@@ -142,7 +146,7 @@ struct cs_node_t* init_client_socket(struct cs_node_t* head, int fd, int bfsz, i
 	node->cs = create_client_socket(fd, bfsz, state, need_msg);
 	node->next = head;
 	head = node;
-	printf("client socket created (%d)\n", node->cs.fd);
+	printf("Server(%d): clients socket created (fd = %d)\n", getpid(), node->cs.fd);
 	// calc maximal file descriptor
 	if (max_fd != NULL)
 		if (node->cs.fd > *(max_fd))
@@ -237,7 +241,7 @@ bool check_mq(mqd_t* mq, fd_set* readfds)
 			memset(buf, 0x00, sizeof(buf));
 			int nbytes = mq_receive(*mq, buf, BUFFER_SIZE, NULL);
 			if (nbytes > 0) {
-				printf("receive message from mq: %s\n", buf);
+				printf("Server(%d): receive message from mq <%s>\n", getpid(), buf);
 				if (strcmp(buf, "#") == 0)
 					return false;
 			}
@@ -279,16 +283,16 @@ void accept_sockets(struct cs_node_t* list, struct cs_node_t** ss_list, fd_set* 
 }
 
 // handle connections
-void handle_sockets(struct cs_node_t* list, fd_set* readfds, fd_set* writefds)
+void handle_sockets(struct cs_node_t* list, fd_set* readfds, fd_set* writefds, mqd_t lg)
 {
 	for (struct cs_node_t* i = list; i != NULL; i = i->next) {
 		if (FD_ISSET(i->cs.fd, readfds)) {
 			i->cs.fl_write = false;
-			main_handle(&i->cs);
+			main_handle(&i->cs, lg);
 		}
 		if (FD_ISSET(i->cs.fd, writefds)) {
 			i->cs.fl_write = true;
-			main_handle(&i->cs);
+			main_handle(&i->cs, lg);
 		}
 	}
 }
@@ -314,7 +318,7 @@ void parse_select(struct process_t* proc)
 			break;
 		// no events - close sockets
 		case 0:
-			printf("timeout select()\n");
+			printf("Server(%d): Timeout\n", getpid());
 			for (struct cs_node_t* i = proc->ss_list; i != NULL; i = i->next)
 				if (!FD_ISSET(i->cs.fd, &(proc->readfds)))
 					i->cs.state = SOCKET_STATE_CLOSED;
@@ -324,7 +328,7 @@ void parse_select(struct process_t* proc)
 			proc->worked = check_mq(proc->mq, &proc->readfds);
 			if (proc->worked) {
 				accept_sockets(proc->ls_list, &proc->ss_list, &proc->readfds, &proc->max_fd);
-				handle_sockets(proc->ss_list, &proc->readfds, &proc->writefds);
+				handle_sockets(proc->ss_list, &proc->readfds, &proc->writefds, proc->lg);
 			}
 		}
 	}

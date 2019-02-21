@@ -2,6 +2,8 @@
 #include "def_smpt.h"
 #include "smtp.h"
 
+#include <unistd.h>
+
 // key word parser
 int parse_key_word(char* key)
 {
@@ -27,9 +29,10 @@ int parse_key_word(char* key)
     return KEY_FAILED;
 }
 
-int key_switcher(struct cs_data_t* cs, char* msg, bool* quit) 
+int key_switcher(struct cs_data_t* cs, char* msg, bool* quit, mqd_t lg) 
 {
     int err = 0;
+    bool undef = false;
     switch(parse_key_word(cs->buf)) {
     case KEY_HELO:
         err = HELO_handle(cs, msg + 5, false);
@@ -60,24 +63,34 @@ int key_switcher(struct cs_data_t* cs, char* msg, bool* quit)
         *quit = true;
         break;
     // undefined 
-    default:
+    default: {
+        char bf[BUFFER_SIZE];
+        sprintf(bf, "command undefined(socket:%d)\n", cs->fd);
+        mq_log(lg, bf);
+        undef = true;
         UNDEFINED_handle(cs);
+    }
+    }
+    if (!undef) {
+        char bf[BUFFER_SIZE];
+        sprintf(bf, "good parse command(socket:%d)\n", cs->fd);
+        mq_log(lg, bf);
     }
     return err;
 }
 
 // parse key word and send result
 // send message
-void reply_handle(struct cs_data_t* cs) 
+void reply_handle(struct cs_data_t* cs, mqd_t lg) 
 {
     bool bq = false;    // quit flag
     while(strstr(cs->buf, "\r\n")) {
         char* eol = strstr(cs->buf, "\r\n");
         eol[0] = '\0';
-        printf("client: %d, msg: %s\n", cs->fd, cs->buf);
+        printf("Server(%d): client(%d) send msg < %s >\n", getpid(), cs->fd, cs->buf);
         char* msg = (char*) malloc(BUFFER_SIZE);
         strcpy(msg, cs->buf);
-        /* int res = */ (cs->state == SOCKET_STATE_DATA) ? TEXT_handle(cs, msg) : key_switcher(cs, msg, &bq);
+        /* int res = */ (cs->state == SOCKET_STATE_DATA) ? TEXT_handle(cs, msg) : key_switcher(cs, msg, &bq, lg);
         free(msg);
         if (bq) break;  // quit session
         // if (res == DATA_FAILED) ALLOWED_handle(cs);
@@ -88,7 +101,7 @@ void reply_handle(struct cs_data_t* cs)
 }
 
 // receive message
-void accept_handle(struct cs_data_t* cs, int bf_left)
+void accept_handle(struct cs_data_t* cs, int bf_left, mqd_t lg)
 {
     switch (recv_data(cs->fd, cs->buf + cs->offset_buf, bf_left, 0)) {
     case DATA_BLOCK:
@@ -104,8 +117,12 @@ void accept_handle(struct cs_data_t* cs, int bf_left)
 }
 
 // main smtp handler (can parse all command)
-void main_handle(struct cs_data_t* cs)
+void main_handle(struct cs_data_t* cs, mqd_t lg)
 {
+    // log
+    char bf[BUFFER_SIZE];
+    sprintf(bf, "handle started for socket(%d)\n", cs->fd);
+    mq_log(lg, bf);
     // send greeting
     if (cs->state == SOCKET_STATE_START) {
         char bf[BUFFER_SIZE];
@@ -126,7 +143,6 @@ void main_handle(struct cs_data_t* cs)
     // buffer fill
     int bf_left = BUFFER_SIZE - cs->offset_buf - 1;
     if (bf_left == 0) {
-        char bf[BUFFER_SIZE];
         sprintf(bf, RSMTP_500_FILLED);
         switch(send_data(cs->fd, bf, strlen(bf), 0)) {
         case DATA_BLOCK:
@@ -141,5 +157,5 @@ void main_handle(struct cs_data_t* cs)
         }
     }
     // send or receive
-    cs->fl_write ? reply_handle(cs) : accept_handle(cs, bf_left);
+    cs->fl_write ? reply_handle(cs, lg) : accept_handle(cs, bf_left, lg);
 }

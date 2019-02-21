@@ -63,7 +63,7 @@ pid_t create_logger()
 	pid_t pid = fork();
     switch (pid) {
     case -1:
-        printf("Server(%d): fork() failed", getpid()); 
+        printf("Server(%d): fork() failed\n", getpid()); 
         break;
     // child
     case 0: {
@@ -74,7 +74,7 @@ pid_t create_logger()
     }
     // parent
     default:
-        printf("Server(%d): create proccess(%d) for logger", getpid(), pid);
+        printf("Server(%d): create proccess(%d) for logger\n", getpid(), pid);
         break;
     }
     return pid;

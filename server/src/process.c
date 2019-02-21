@@ -54,6 +54,13 @@ void run_process(struct process_t* proc)
         // delete all closed sockets
         proc->ss_list = delete_sockets_by_state(proc->ss_list, SOCKET_STATE_CLOSED);
 
+        // log
+        char bf[BUFFER_SIZE];
+        sprintf(bf, "ls_list = %p is_null = %d", proc->ls_list, (proc->ls_list == NULL));
+        mq_log(proc->lg, bf);
+        sprintf(bf, "ss_list = %p is_null = %d", proc->ss_list, (proc->ss_list == NULL));
+        mq_log(proc->lg, bf);
+
         // set all sockets to ss_list
         for (struct cs_node_t* i = proc->ls_list; i != NULL; i = i->next)
             FD_SET(i->cs.fd, &(proc->readfds));
@@ -80,7 +87,7 @@ void free_process(struct process_t* proc)
     free(proc->mq);
 
     free(proc);
-    printf("Server(%d): process killed", getpid());
+    printf("Server(%d): process killed\n", getpid());
     kill(getpid(), SIGTERM);
 }
 
@@ -93,7 +100,7 @@ struct process_t* create_process(struct ss_node_t* fd_socket, pid_t log_pid)
     switch (pid) {
         // process not created
         case -1: 
-            printf("Server(%d): fork() failed", getpid()); 
+            printf("Server(%d): fork() failed\n", getpid()); 
             break;
         // process-child
         case 0:
@@ -114,7 +121,7 @@ struct process_t* create_process(struct ss_node_t* fd_socket, pid_t log_pid)
             break;
         // process-parent
         default:
-            printf("Server(%d): create proccess(%d)", getpid(), pid);
+            printf("Server(%d): create proccess(%d)\n", getpid(), pid);
             break;
     }
     return proc;
