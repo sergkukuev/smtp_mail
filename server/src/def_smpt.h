@@ -23,12 +23,18 @@
 #define STR_QUIT "QUIT"
 
 // replies smtp
-#define RSMTP_220 "220 Служба готова к работе. \r\n"
-#define RSMTP_221 "221 Служба закрывает канал передачи данных. \r\n"
-#define RSMTP_250 "250 Выполнение почтовой команды успешно окончено. \r\n"
-#define RSMTP_252 "252 Невозможно проверить наличие почтового ящика для пользователя, но сообщение принято, и сервер попытается его доставить. \r\n"
-#define RSMTP_354 "354 Начало приема сообщения. Сообщение должно заканчиваться точкой на новой строке и новой строкой. \r\n"
-#define RSMTP_450 "450 Запрошенная команда не принята – недоступен почтовый ящик (почтовый ящик временно занят). \r\n"
-#define RSMTP_500 "500 Синтаксическая ошибка, команда не распознана. \r\n"
+#define RSMTP_HELLO "220 SMTP CCSMTP bmstu myserver.ru \r\n"
+#define RSMTP_221 "221 closing connection \r\n"
+#define RSMTP_250 "250 OK \r\n"
+#define RSMTP_250_TEXT "250- "
+#define RSMTP_250_RESET "250 Reset OK \r\n"
+#define RSMTP_250_RCPT "250 Accepted \r\n"
+#define RSMTP_354 "354 Enter message, ending with \".\" on a line by itself \r\n"
+#define RSMTP_450 "450 mailbox unavailable \r\n"
+#define RSMTP_451 "451 too much recepients \r\n"
+#define RSMTP_500 "500 Unrecognized command \r\n"
+#define RSMTP_500_FILLED "500 filled \r\n"
+#define RSMTP_501 "501 invalid argument(s) \r\n"
+#define RSMTP_503 "503 Wrong command sequence \r\n"
 
 #endif // !__DEF_SMPT_H__

@@ -9,4 +9,9 @@ void get_address(struct sockaddr_in* addr, socklen_t* addrlen)
     addr->sin_port = htons(atoi(SERVER_PORT));
     *addrlen = sizeof(addr);
 }
+
+char* parse_mail(char* buf)
+{
+    return buf;
+}
 			

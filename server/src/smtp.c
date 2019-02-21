@@ -30,7 +30,7 @@ int key_switcher(struct cs_data_t* cs, char* msg, bool* quit)
     int err = 0;
     switch(parse_key_word(cs->buf)) {
     case KEY_HELO:
-        err = HELO_handle(cs, msg + 5);
+        err = HELO_handle(cs, msg + 5, false);
         break;
     case KEY_EHLO:
         err = EHLO_handle(cs, msg + 5);
@@ -42,13 +42,13 @@ int key_switcher(struct cs_data_t* cs, char* msg, bool* quit)
         err = RCPT_handle(cs, msg + 5);
         break;
     case KEY_DATA:
-        err = DATA_handle(cs);
+        err = DATA_handle(cs, msg + 5);
         break;
     case KEY_NOOP:
         err = NOOP_handle(cs);
         break;
     case KEY_RSET:
-        err = RSET_handle(cs);
+        err = RSET_handle(cs, msg + 5);
         break;
     case KEY_QUIT:  // exit session
         err = QUIT_handle(cs);
@@ -104,7 +104,7 @@ void main_handle(struct cs_data_t* cs)
     // send greeting
     if (cs->state == SOCKET_STATE_START) {
         char bf[BUFFER_SIZE];
-        sprintf(bf, "%s %s SMTP CCSMTP\n", RSMTP_220, SERVER_DOMAIN);
+        sprintf(bf, "%s", RSMTP_HELLO);
         switch(send_data(cs->fd, bf, strlen(bf), 0)) {
         case DATA_BLOCK:
             break;
@@ -122,7 +122,7 @@ void main_handle(struct cs_data_t* cs)
     int bf_left = BUFFER_SIZE - cs->offset_buf - 1;
     if (bf_left == 0) {
         char bf[BUFFER_SIZE];
-        sprintf(bf, RSMTP_500);
+        sprintf(bf, RSMTP_500_FILLED);
         switch(send_data(cs->fd, bf, strlen(bf), 0)) {
         case DATA_BLOCK:
             break;

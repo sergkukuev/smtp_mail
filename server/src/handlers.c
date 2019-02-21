@@ -18,29 +18,28 @@ int recv_data(int fd, char* bf, size_t bfsz, int flags)
 }
 
 // base handle
-int HELO_handle(struct cs_data_t* cs, char* msg)
+int HELO_handle(struct cs_data_t* cs, char* msg, bool ehlo)
 {
     int result = DATA_FAILED;
-    switch (cs->state) {
-    case SOCKET_STATE_INIT: {
-        char bf[BUFFER_SIZE] = RSMTP_250;
-        struct sockaddr_in addr;
-        socklen_t addrlen;
-        get_address(&addr, &addrlen);
-        getpeername(cs->fd, (struct sockaddr*) &addr, &addrlen); 
-        result = send_data(cs->fd, bf, sizeof(bf), 0);
-        if (result >= 0)    // change socket state
-            cs->state = SOCKET_STATE_WAIT;
-    }
-    default:
-        break;
-    }
+    char bf[BUFFER_SIZE];
+    if (!ehlo) 
+        sprintf(bf, "%sHello %s \r\n", RSMTP_250_TEXT, msg);
+    else
+        sprintf(bf, "Hello %s \r\n %sPIPELINING\r\n %sHELP \r\n", msg, RSMTP_250_TEXT, RSMTP_250_TEXT); 
+    bf[strlen(bf) + 1] = '\0';
+    struct sockaddr_in addr;
+    socklen_t addrlen;
+    get_address(&addr, &addrlen);
+    getpeername(cs->fd, (struct sockaddr*) &addr, &addrlen); 
+    result = send_data(cs->fd, bf, sizeof(bf), 0);
+    if (result >= 0 && cs->state == SOCKET_STATE_INIT)    // change socket state
+        cs->state = SOCKET_STATE_WAIT;
     return result;
 }
 
 int EHLO_handle(struct cs_data_t* cs, char* msg) 
 {
-    return HELO_handle(cs, msg);
+    return HELO_handle(cs, msg, true);
 }
 
 int MAIL_handle(struct cs_data_t* cs, char* msg)
@@ -48,15 +47,15 @@ int MAIL_handle(struct cs_data_t* cs, char* msg)
     int result = DATA_FAILED;
     switch (cs->state) {
     case SOCKET_STATE_WAIT: {
-        char* from = cs->message->from = msg;
-        char bf[BUFFER_SIZE] = RSMTP_450;
-        if ((from != NULL) & (strcmp(from, "") != 0))
-            sprintf(bf, "%s", RSMTP_250);
+        char* from = cs->message->from = parse_mail(msg);
+        char bf[BUFFER_SIZE] = RSMTP_250;
+        if (from == NULL)   sprintf(bf, "%s", RSMTP_450);
         result = send_data(cs->fd, bf, sizeof(bf), 0);
         if (result >= 0 && strcmp(bf, RSMTP_250) == 0)    // change socket state
             cs->state = SOCKET_STATE_MAIL;
     }
     default:
+        result = send_data(cs->fd, RSMTP_503, sizeof(RSMTP_503), 0);
         break;
     }
     return result;
@@ -69,41 +68,47 @@ int RCPT_handle(struct cs_data_t* cs, char* msg)
     case SOCKET_STATE_MAIL:
     case SOCKET_STATE_RCPT: {
         // check maximal recepients
-        char bf[BUFFER_SIZE] = "too much recepients";//RSMTP_451;
+        char bf[BUFFER_SIZE] = RSMTP_451;
         if (cs->message->rnum != 10) {
-            char* to = cs->message->to[cs->message->rnum] = msg;
+            char* to = cs->message->to[cs->message->rnum] = parse_mail(msg);
             if (to != NULL) {
                 cs->message->rnum++;
-                sprintf(bf, "%s", RSMTP_250);
+                sprintf(bf, "%s", RSMTP_250_RCPT);
             } else {
                 sprintf(bf, "%s", RSMTP_450);
             }
         }
         result = send_data(cs->fd, bf, sizeof(bf), 0);
-        if (result >= 0 && strcmp(bf, RSMTP_250) == 0)    // change socket state
+        if (result >= 0 && strcmp(bf, RSMTP_250_RCPT) == 0)    // change socket state
             cs->state = SOCKET_STATE_RCPT;
     }
     default:
+        result = send_data(cs->fd, RSMTP_503, sizeof(RSMTP_503), 0);
         break;
     }
     return result;
 }
 
-int DATA_handle(struct cs_data_t* cs)
+int DATA_handle(struct cs_data_t* cs, char* msg)
 {
     int result = DATA_FAILED;
     switch (cs->state) {
     case SOCKET_STATE_RCPT: {
-        char bf[BUFFER_SIZE] = RSMTP_354;
-        result = send_data(cs->fd, bf, sizeof(bf), 0);
-        if (result >= 0) { 
-            cs->state = SOCKET_STATE_DATA;
-            cs->message->body = (char*) malloc(1);
-            cs->message->body[0] = '\0';
-            cs->message->blen = 0;
+        if (strcmp(msg, "") == 0 || msg == NULL) {
+            char bf[BUFFER_SIZE] = RSMTP_354;
+            result = send_data(cs->fd, bf, sizeof(bf), 0);
+            if (result >= 0) { 
+                cs->state = SOCKET_STATE_DATA;
+                cs->message->body = (char*) malloc(1);
+                cs->message->body[0] = '\0';
+                cs->message->blen = 0;
+            }
+        } else {
+            result = send_data(cs->fd, RSMTP_501, sizeof(RSMTP_501), 0);
         }
     }
     default:
+        result = send_data(cs->fd, RSMTP_503, sizeof(RSMTP_503), 0);
         break;
     }
     return result;
@@ -115,29 +120,25 @@ int NOOP_handle(struct cs_data_t* cs)
     return send_data(cs->fd, bf, sizeof(bf), 0);
 }
 
-int RSET_handle(struct cs_data_t* cs)
+int RSET_handle(struct cs_data_t* cs, char* msg)
 {
     int result = DATA_FAILED;
-    switch (cs->state) {
-    case SOCKET_STATE_TEXT:
-    case SOCKET_STATE_MAIL:
-    case SOCKET_STATE_RCPT:
-    case SOCKET_STATE_WAIT: {
-        // full clean
-        free(cs->message->from);
-        cs->message->from = NULL;
-        for (int i = 0; i <= cs->message->rnum; i++) {
-            free(cs->message->to[i]);
-            cs->message->to[i] = NULL;
-        }
-        free(cs->message->body);
-        char bf[BUFFER_SIZE] = RSMTP_250;
+    if (strcmp(msg, "") == 0 || msg == NULL) {
+        char bf[BUFFER_SIZE] = RSMTP_250_RESET;
         result = send_data(cs->fd, bf, sizeof(bf), 0);
-        if (result >= 0)    // change socket state
+        if (result >= 0) {
             cs->state = SOCKET_STATE_WAIT;
-    }
-    default:
-        break;
+            // full clean
+            free(cs->message->from);
+            cs->message->from = NULL;
+            for (int i = 0; i <= cs->message->rnum; i++) {
+                free(cs->message->to[i]);
+                cs->message->to[i] = NULL;
+            }
+            free(cs->message->body);
+        }       
+    } else {
+        result = send_data(cs->fd, RSMTP_501, sizeof(RSMTP_501), 0);
     }
     return result;
 }
@@ -165,12 +166,12 @@ int TEXT_handle(struct cs_data_t* cs, char* msg)
         strcat(cs->message->body, cs->buf);
         sprintf(cs->message->body + cs->message->blen, "\n");
         // cs->message->body[cs->message->blen] = "\n";
-        *(cs->message->body + cs->message->blen + 1) = "\0";
+        *(cs->message->body + cs->message->blen + 1) = '\0';
     } else {
         // end message
         // save_message(cs->message);
         cs->state = SOCKET_STATE_TEXT;
-        result = RSET_handle(cs);
+        result = RSET_handle(cs, NULL);
     }
     return result;
 }

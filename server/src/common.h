@@ -86,5 +86,6 @@ struct process_t {
 /// common functions
 
 void get_address(struct sockaddr_in* addr, socklen_t* addrlen);
+char* parse_mail(char* bf);
 
 #endif
