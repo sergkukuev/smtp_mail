@@ -22,6 +22,8 @@ int parse_key_word(char* key)
         return KEY_RSET;
     if (strcmp(key, STR_QUIT) == 0)
         return KEY_QUIT;
+    if (strcmp(key, STR_VRFY) == 0)
+        return KEY_VRFY;
     return KEY_FAILED;
 }
 
@@ -49,6 +51,9 @@ int key_switcher(struct cs_data_t* cs, char* msg, bool* quit)
         break;
     case KEY_RSET:
         err = RSET_handle(cs, msg + 5);
+        break;
+    case KEY_VRFY:
+        err = VRFY_handle(cs, msg + 5);
         break;
     case KEY_QUIT:  // exit session
         err = QUIT_handle(cs, msg + 5);

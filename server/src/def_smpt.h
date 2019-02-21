@@ -11,6 +11,7 @@
 #define KEY_NOOP 5
 #define KEY_RSET 6
 #define KEY_QUIT 7
+#define KEY_VRFY 8
 
 // smtp keys string
 #define STR_HELO "HELO"
@@ -21,6 +22,7 @@
 #define STR_NOOP "NOOP"
 #define STR_RSET "RSET"
 #define STR_QUIT "QUIT"
+#define STR_VRFY "VRFY"
 
 // replies smtp
 #define RSMTP_HELLO "220 SMTP CCSMTP bmstu myserver.ru \r\n"
@@ -29,6 +31,7 @@
 #define RSMTP_250_TEXT "250- "
 #define RSMTP_250_RESET "250 Reset OK \r\n"
 #define RSMTP_250_RCPT "250 Accepted \r\n"
+#define RSMTP_252_VRFY "252 Administrative prohibition \r\n"
 #define RSMTP_354 "354 Enter message, ending with \".\" on a line by itself \r\n"
 #define RSMTP_450 "450 mailbox unavailable \r\n"
 #define RSMTP_451 "451 too much recepients \r\n"

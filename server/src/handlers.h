@@ -20,6 +20,7 @@ int EHLO_handle(struct cs_data_t* cs, char* msg);
 int MAIL_handle(struct cs_data_t* cs, char* msg);
 int RCPT_handle(struct cs_data_t* cs, char* msg);
 int DATA_handle(struct cs_data_t* cs, char* msg);
+int VRFY_handle(struct cs_data_t* cs, char* msg);
 int NOOP_handle(struct cs_data_t* cs);
 int RSET_handle(struct cs_data_t* cs, char* msg);
 int QUIT_handle(struct cs_data_t* cs, char* msg);

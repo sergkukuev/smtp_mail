@@ -95,7 +95,7 @@ int DATA_handle(struct cs_data_t* cs, char* msg)
     int result = DATA_FAILED;
     switch (cs->state) {
     case SOCKET_STATE_RCPT: {
-        if (strcmp(msg, "") == 0 || msg == NULL) {
+        //if (strcmp(msg, "") == 0 || msg == NULL) {
             char bf[BUFFER_SIZE] = RSMTP_354;
             result = send_data(cs->fd, bf, strlen(bf), 0);
             if (result >= 0) { 
@@ -104,9 +104,9 @@ int DATA_handle(struct cs_data_t* cs, char* msg)
                 cs->message->body[0] = '\0';
                 cs->message->blen = 0;
             }
-        } else {
-            result = send_data(cs->fd, RSMTP_501, strlen(RSMTP_501), 0);
-        }
+        //} else {
+        //    result = send_data(cs->fd, RSMTP_501, strlen(RSMTP_501), 0);
+        //}
         break;
     }
     default:
@@ -143,6 +143,11 @@ int RSET_handle(struct cs_data_t* cs, char* msg)
         result = send_data(cs->fd, RSMTP_501, strlen(RSMTP_501), 0);
     }
     return result;
+}
+
+int VRFY_handle(struct cs_data_t* cs, char* msg)
+{
+    return send_data(cs->fd, RSMTP_252_VRFY, strlen(RSMTP_252_VRFY), 0);
 }
 
 int QUIT_handle(struct cs_data_t* cs, char* msg)
