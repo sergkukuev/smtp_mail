@@ -97,5 +97,6 @@ struct process_t {
 void get_address(struct sockaddr_in* addr, socklen_t* addrlen);
 char* parse_mail(char* bf);
 int save_message(struct msg_t* msg);
+int mq_log(pid_t lg, char* msg);
 
 #endif
