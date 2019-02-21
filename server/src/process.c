@@ -93,9 +93,8 @@ void free_process(struct process_t* proc)
 
 // process creating
 // return process id or -1
-struct process_t* create_process(struct ss_node_t* fd_socket, pid_t log_pid)
+pid_t create_process(struct ss_node_t* fd_socket, pid_t log_pid)
 {
-    struct process_t* proc = NULL;
     pid_t pid = fork();
     switch (pid) {
         // process not created
@@ -103,8 +102,8 @@ struct process_t* create_process(struct ss_node_t* fd_socket, pid_t log_pid)
             printf("Server(%d): fork() failed\n", getpid()); 
             break;
         // process-child
-        case 0:
-            proc = init_process(getpid(), log_pid, fd_socket);
+        case 0: {
+            struct process_t* proc = init_process(getpid(), log_pid, fd_socket);
             // open mq logger
             mqd_t lg = mq_open(proc->lg_name, O_WRONLY); 
             if (lg > 0)
@@ -119,10 +118,11 @@ struct process_t* create_process(struct ss_node_t* fd_socket, pid_t log_pid)
             run_process(proc);
             free_process(proc);
             break;
+        }
         // process-parent
         default:
             printf("Server(%d): create proccess(%d)\n", getpid(), pid);
             break;
     }
-    return proc;
+    return pid;
 }

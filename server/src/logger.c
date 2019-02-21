@@ -67,7 +67,7 @@ pid_t create_logger()
         break;
     // child
     case 0: {
-        struct process_t* pr = create_process(NULL, getpid()); 
+        struct process_t* pr = init_process(getpid(), getpid(), NULL); 
         run_logger(pr);
         kill(getpid(), SIGTERM);
         break;
