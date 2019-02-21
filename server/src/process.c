@@ -73,6 +73,13 @@ void free_process(struct process_t* proc)
     kill(getpid(), SIGTERM);
 }
 
+void body_process(struct ss_node_t* fd_sock)
+{
+    struct process_t* proc = init_process(getpid(), fd_sock);
+    run_process(proc);
+    free_process(proc);
+}
+
 // process creating
 // return process id or -1
 pid_t create_process(struct ss_node_t* fd_socket)
@@ -84,11 +91,9 @@ pid_t create_process(struct ss_node_t* fd_socket)
             perror("fork() failed");
             break;
         // process-child
-        case 0: {
-            struct process_t* proc = init_process(getpid(), fd_socket);
-            run_process(proc);
-            free_process(proc);
-        }
+        case 0:
+            body_process(fd_socket);
+            break;
         // process-parent
         default:
             break;
