@@ -71,13 +71,13 @@ int key_switcher(struct cs_data_t* cs, bool* quit)
 void reply_handle(struct cs_data_t* cs) 
 {
     bool bq = false;    // quit flag
-    while(strstr(cs->buf, "\r\n") || !bq) {
+    while(strstr(cs->buf, "\r\n")) {
         char* eol = strstr(cs->buf, "\r\n");
         eol[0] = '\0';
         printf("client: %d, msg: %s\n", cs->fd, cs->buf);
-        int res = (cs->state != SOCKET_STATE_DATA) ? key_switcher(cs, &bq) : TEXT_handle(cs);
-        if (res == DATA_FAILED) 
-            ALLOWED_handle(cs);
+        int res = (cs->state == SOCKET_STATE_DATA) ? TEXT_handle(cs) : key_switcher(cs, &bq);
+        if (bq) break;  // quit session
+        if (res == DATA_FAILED) ALLOWED_handle(cs);
         memmove(cs->buf, eol + 2, BUFFER_SIZE - (eol + 2 - cs->buf));
     }
     // set readfds flag
