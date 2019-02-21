@@ -15,7 +15,6 @@
 
 // server data
 #define SERVER_ADDR "0.0.0.0"
-#define SERVER_PORT_I 2525
 #define SERVER_PORT "2525"
 #define SERVER_DOMAIN "myserver.ru"
 #define MAILDIR "../maildir/"

@@ -186,7 +186,7 @@ void accept_sockets(struct cs_node_t* list, struct cs_node_t* ss_list, fd_set* r
 			memset(&addr, 0, sizeof(addr));
 			addr.sin_family = AF_UNSPEC;
 			addr.sin_addr.s_addr = INADDR_ANY;
-			addr.sin_port = htons(SERVER_PORT_I);
+			addr.sin_port = htons(atoi(SERVER_PORT));
 			socklen_t addrlen = sizeof(addr);
 			int fd = accept(i->cs.fd, (struct sockaddr*) &addr, &addrlen);
 			if (fd == -1) {
