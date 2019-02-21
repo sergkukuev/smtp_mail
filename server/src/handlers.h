@@ -15,8 +15,8 @@ int send_data(int fd, char* bf, size_t bfsz, int flags);
 int recv_data(int fd, char* bf, size_t bfsz, int flags);
 
 // base handlers
-int HELO_handle(struct cs_data_t* cs);
-int EHLO_handle(struct cs_data_t* cs);
+int HELO_handle(struct cs_data_t* cs, char* msg);
+int EHLO_handle(struct cs_data_t* cs, char* msg);
 int MAIL_handle(struct cs_data_t* cs);
 int RCPT_handle(struct cs_data_t* cs);
 int DATA_handle(struct cs_data_t* cs);

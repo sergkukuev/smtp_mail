@@ -18,28 +18,29 @@ int recv_data(int fd, char* bf, size_t bfsz, int flags)
 }
 
 // base handle
-int HELO_handle(struct cs_data_t* cs)
+int HELO_handle(struct cs_data_t* cs, char* msg)
 {
     int result = DATA_FAILED;
     switch (cs->state) {
-    case SOCKET_STATE_INIT:
-        char bf[BUFFER_SIZE];
+    case SOCKET_STATE_INIT: {
+        char bf[BUFFER_SIZE] = RSMTP_250;
         struct sockaddr_in addr;
         socklen_t addrlen;
         get_address(&addr, &addrlen);
-        getpeername(cs->fd, &addr, &addrlen);
-        result = recv_data(cs->fd, bf, sizeof(bf), 0);
+        getpeername(cs->fd, (struct sockaddr*) &addr, &addrlen); 
+        result = send_data(cs->fd, bf, sizeof(bf), 0);
         if (result >= 0)    // change socket state
             cs->state = SOCKET_STATE_WAIT;
+    }
     default:
         break;
     }
     return result;
 }
 
-int EHLO_handle(struct cs_data_t* cs) 
+int EHLO_handle(struct cs_data_t* cs, char* msg) 
 {
-    return HELO_handle(cs);
+    return HELO_handle(cs, msg);
 }
 
 int MAIL_handle(struct cs_data_t* cs)
@@ -102,7 +103,7 @@ int QUIT_handle(struct cs_data_t* cs)
     return 0;
 }
 
-// connect with maildir folder
+// writing message
 int TEXT_handle(struct cs_data_t* cs)
 {
     char buf[] = "HELO";
@@ -116,12 +117,8 @@ int TEXT_handle(struct cs_data_t* cs)
 // undefined
 int UNDEFINED_handle(struct cs_data_t* cs)
 {
-    char buf[] = "HELO";
-    if (cs->fd > 0)
-        if (send(cs->fd, buf, strlen(buf), 0) < 0)
-            if (errno == EWOULDBLOCK)
-                return 1;
-    return 0;
+    char bf[BUFFER_SIZE] = RSMTP_500;
+    return send_data(cs->fd, bf, sizeof(bf), 0);
 }
 
 // send client allowed command list

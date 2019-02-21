@@ -124,7 +124,7 @@ struct cs_data_t create_client_socket(int fd, int bfsz, int state, bool need_msg
 	cs.state = state;
 	cs.fl_write = true;
 	cs.buf = (bfsz > 0) ? malloc(bfsz * sizeof(*cs.buf)) : NULL;
-	cs.inpmsg = need_msg;
+	cs.inpmsg = false;
 	if (need_msg) {
 		cs.message = malloc(sizeof *cs.message);
 		cs.message->to = malloc(10 * sizeof(char));

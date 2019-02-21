@@ -39,10 +39,10 @@ void reply_handle(struct cs_data_t* cs)
             strcpy(msg, cs->buf);
             switch(parse_key_word(cs->buf)) {
             case KEY_HELO:
-                err = HELO_handle(cs);
+                err = HELO_handle(cs, msg + 4);
                 break;
             case KEY_EHLO:
-                err = EHLO_handle(cs);
+                err = EHLO_handle(cs, msg + 4);
                 break;
             case KEY_MAIL:
                 err = MAIL_handle(cs);
