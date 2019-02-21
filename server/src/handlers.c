@@ -93,11 +93,17 @@ int RSET_handle(struct cs_data_t* cs)
     case SOCKET_STATE_MAIL:
     case SOCKET_STATE_RCPT:
     case SOCKET_STATE_WAIT: {
-        char* from = cs->message->from = get_mail();
-        char bf[BUFFER_SIZE] = (from != NULL && strcmp(from, "") != 0) ? RSMTP_250 : RSMTP_450;
+        // full clean
+        free(cs->message->from);
+        cs->message->from = NULL;
+        for (int i = 0; i <= cs->message->rnum; i++) {
+            free(cs->message->to[i]);
+            cs->message->to[i] = NULL;
+        }
+        char bf[BUFFER_SIZE] = RSMTP_250;
         result = send_data(cs->fd, bf, sizeof(bf), 0);
-        if (result >= 0 && strcmp(bf, RSMTP_250) == 0)    // change socket state
-            cs->state = SOCKET_STATE_MAIL;
+        if (result >= 0)    // change socket state
+            cs->state = SOCKET_STATE_WAIT;
     }
     default:
         break;
