@@ -25,11 +25,9 @@ int parse_key_word(char* key)
     return KEY_FAILED;
 }
 
-int key_switcher(struct cs_data_t* cs, bool* quit) 
+int key_switcher(struct cs_data_t* cs, char* msg, bool* quit) 
 {
-    char* msg = (char*) malloc(BUFFER_SIZE);
     int err = 0;
-    strcpy(msg, cs->buf);
     switch(parse_key_word(cs->buf)) {
     case KEY_HELO:
         err = HELO_handle(cs, msg + 5);
@@ -60,7 +58,6 @@ int key_switcher(struct cs_data_t* cs, bool* quit)
     default:
         UNDEFINED_handle(cs);
     }
-    free(msg);
     return err;
 }
 
@@ -73,7 +70,10 @@ void reply_handle(struct cs_data_t* cs)
         char* eol = strstr(cs->buf, "\r\n");
         eol[0] = '\0';
         printf("client: %d, msg: %s\n", cs->fd, cs->buf);
-        int res = (cs->state == SOCKET_STATE_DATA) ? TEXT_handle(cs, msg) : key_switcher(cs, &bq);
+        char* msg = (char*) malloc(BUFFER_SIZE);
+        strcpy(msg, cs->buf);
+        int res = (cs->state == SOCKET_STATE_DATA) ? TEXT_handle(cs, msg) : key_switcher(cs, msg, &bq);
+        free(msg);
         if (bq) break;  // quit session
         if (res == DATA_FAILED) ALLOWED_handle(cs);
         memmove(cs->buf, eol + 2, BUFFER_SIZE - (eol + 2 - cs->buf));

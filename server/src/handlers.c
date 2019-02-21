@@ -163,11 +163,12 @@ int TEXT_handle(struct cs_data_t* cs, char* msg)
             cs->message->blen = sz; 
         }
         strcat(cs->message->body, cs->buf);
-        cs->message->body[cs->message->blen] = "\n";
-        cs->message->body[cs->message->blen + 1] = "\0";
+        sprintf(cs->message->body + cs->message->blen, "\n");
+        // cs->message->body[cs->message->blen] = "\n";
+        *(cs->message->body + cs->message->blen + 1) = "\0";
     } else {
         // end message
-        save_message(cs->message);
+        // save_message(cs->message);
         cs->state = SOCKET_STATE_TEXT;
         result = RSET_handle(cs);
     }
