@@ -25,53 +25,59 @@ int parse_key_word(char* key)
     return KEY_FAILED;
 }
 
+int key_switcher(struct cs_data_t* cs, bool* quit) 
+{
+    char* msg = (char*) malloc(BUFFER_SIZE);
+    int err = 0;
+    strcpy(msg, cs->buf);
+    switch(parse_key_word(cs->buf)) {
+    case KEY_HELO:
+        err = HELO_handle(cs, msg + 4);
+        break;
+    case KEY_EHLO:
+        err = EHLO_handle(cs, msg + 4);
+        break;
+    case KEY_MAIL:
+        err = MAIL_handle(cs, msg + 4);
+        break;
+    case KEY_RCPT:
+        err = RCPT_handle(cs);
+        break;
+    case KEY_DATA:
+        err = DATA_handle(cs);
+        break;
+    case KEY_NOOP:
+        err = NOOP_handle(cs);
+        break;
+    case KEY_RSET:
+        err = RSET_handle(cs);
+        break;
+    case KEY_QUIT:  // exit session
+        err = QUIT_handle(cs);
+        *quit = true;
+        break;
+    // undefined 
+    default:
+        UNDEFINED_handle(cs);
+    }
+
+    //
+    free(msg);
+    return err;
+}
+
 // parse key word and send result
 // send message
 void reply_handle(struct cs_data_t* cs) 
 {
-    while(strstr(cs->buf, "\r\n")) {
+    bool bq = false;    // quit flag
+    while(strstr(cs->buf, "\r\n") || !bq) {
         char* eol = strstr(cs->buf, "\r\n");
         eol[0] = '\0';
         printf("client: %d, msg: %s\n", cs->fd, cs->buf);
-        if (!cs->inpmsg) {
-            char* msg = (char*) malloc(BUFFER_SIZE);
-            int err = 0;
-            strcpy(msg, cs->buf);
-            switch(parse_key_word(cs->buf)) {
-            case KEY_HELO:
-                err = HELO_handle(cs, msg + 4);
-                break;
-            case KEY_EHLO:
-                err = EHLO_handle(cs, msg + 4);
-                break;
-            case KEY_MAIL:
-                err = MAIL_handle(cs, msg + 4);
-                break;
-            case KEY_RCPT:
-                err = RCPT_handle(cs);
-                break;
-            case KEY_DATA:
-                err = DATA_handle(cs);
-                break;
-            case KEY_NOOP:
-                err = NOOP_handle(cs);
-                break;
-            case KEY_RSET:
-                err = RSET_handle(cs);
-                break;
-            case KEY_QUIT:  // exit session
-                err = QUIT_handle(cs);
-                return;
-            // undefined 
-            default:
-                UNDEFINED_handle(cs);
-            }
-            if (err == DATA_FAILED)
-                ALLOWED_handle(cs);
-            free(msg);
-        } else {
-            TEXT_handle(cs);
-        }
+        int res = (cs->state != SOCKET_STATE_DATA) ? key_switcher(cs, &bq) : TEXT_handle(cs);
+        if (res == DATA_FAILED) 
+            ALLOWED_handle(cs);
         memmove(cs->buf, eol + 2, BUFFER_SIZE - (eol + 2 - cs->buf));
     }
     // set readfds flag
