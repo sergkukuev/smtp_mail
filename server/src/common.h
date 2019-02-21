@@ -17,9 +17,16 @@
 #define SERVER_ADDR "0.0.0.0"
 #define SERVER_PORT "2525"
 #define SERVER_DOMAIN "myserver.ru"
-#define MAILDIR "../maildir/"
 #define BUFFER_SIZE 1024
 #define BACKLOG_SIZE 3
+
+// maildir 
+#define PARSE_FAILED -1
+#define MAILDIR "../maildir/"
+#define MAILSTART '<'
+#define MAILEND '>'
+#define DOMAINSTART ' '
+#define DOMAINEND '\0'
 
 // socket state
 #define SOCKET_STATE_INIT 0
@@ -87,5 +94,6 @@ struct process_t {
 
 void get_address(struct sockaddr_in* addr, socklen_t* addrlen);
 char* parse_mail(char* bf);
+int save_message(struct msg_t* msg);
 
 #endif

@@ -177,7 +177,7 @@ int TEXT_handle(struct cs_data_t* cs, char* msg)
         *(cs->message->body + cs->message->blen + 1) = '\0';
     } else {
         // end message
-        // save_message(cs->message);
+        save_message(cs->message);
         cs->state = SOCKET_STATE_TEXT;
         result = RSET_handle(cs, NULL);
     }
