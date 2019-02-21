@@ -65,12 +65,14 @@ pid_t create_logger()
     case -1:
         printf("Server(%d): fork() failed", getpid()); 
         break;
+    // child
     case 0: {
         struct process_t* pr = create_process(NULL, getpid()); 
         run_logger(pr);
         kill(getpid(), SIGTERM);
         break;
     }
+    // parent
     default:
         printf("Server(%d): create proccess(%d) for logger", getpid(), pid);
         break;

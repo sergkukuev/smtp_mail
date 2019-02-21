@@ -3,9 +3,9 @@
 #include <sys/time.h>
 #include <sys/stat.h>
 
-int mq_log(pid_t lg, char* msg)
+int mq_log(mqd_t lg, char* msg)
 {
-    int res = mq_send(lg, msg, BUFFER_SIZE, 0); 
+    int res = mq_send(lg, msg, strlen(msg), 0); 
     if (res < 0)
         perror(msg);
     return res;
