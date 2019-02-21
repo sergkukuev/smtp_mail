@@ -102,7 +102,7 @@ void main_handle(struct cs_data_t* cs)
     // send greeting
     if (cs->state == SOCKET_STATE_START) {
         char bf[BUFFER_SIZE];
-        sprintf(bf, "%s %s SMTP CCSMTP\n", SMTP_220, SERVER_DOMAIN);
+        sprintf(bf, "%s %s SMTP CCSMTP\n", RSMTP_220, SERVER_DOMAIN);
         int nbytes = send(cs->fd, bf, strlen(bf), 0);
         switch (nbytes) {
         case -1:
@@ -120,7 +120,7 @@ void main_handle(struct cs_data_t* cs)
     int bf_left = BUFFER_SIZE - cs->offset_buf - 1;
     if (bf_left == 0) {
         char bf[BUFFER_SIZE];
-        sprintf(bf, SMTP_500);
+        sprintf(bf, RSMTP_500);
         int nbytes = send(cs->fd, bf, strlen(bf), 0);
         switch (nbytes) {
         case -1:
