@@ -51,7 +51,7 @@ int key_switcher(struct cs_data_t* cs, char* msg, bool* quit)
         err = RSET_handle(cs, msg + 5);
         break;
     case KEY_QUIT:  // exit session
-        err = QUIT_handle(cs);
+        err = QUIT_handle(cs, msg + 5);
         *quit = true;
         break;
     // undefined 
@@ -72,10 +72,10 @@ void reply_handle(struct cs_data_t* cs)
         printf("client: %d, msg: %s\n", cs->fd, cs->buf);
         char* msg = (char*) malloc(BUFFER_SIZE);
         strcpy(msg, cs->buf);
-        int res = (cs->state == SOCKET_STATE_DATA) ? TEXT_handle(cs, msg) : key_switcher(cs, msg, &bq);
+        /* int res = */ (cs->state == SOCKET_STATE_DATA) ? TEXT_handle(cs, msg) : key_switcher(cs, msg, &bq);
         free(msg);
         if (bq) break;  // quit session
-        if (res == DATA_FAILED) ALLOWED_handle(cs);
+        // if (res == DATA_FAILED) ALLOWED_handle(cs);
         memmove(cs->buf, eol + 2, BUFFER_SIZE - (eol + 2 - cs->buf));
     }
     // set readfds flag

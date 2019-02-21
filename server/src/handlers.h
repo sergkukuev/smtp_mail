@@ -22,15 +22,12 @@ int RCPT_handle(struct cs_data_t* cs, char* msg);
 int DATA_handle(struct cs_data_t* cs, char* msg);
 int NOOP_handle(struct cs_data_t* cs);
 int RSET_handle(struct cs_data_t* cs, char* msg);
-int QUIT_handle(struct cs_data_t* cs);
+int QUIT_handle(struct cs_data_t* cs, char* msg);
 
 // connect with maildir folder
 int TEXT_handle(struct cs_data_t* cs, char* msg);
 
 // undefined command
 int UNDEFINED_handle(struct cs_data_t* cs);
-
-// send client allowed command list
-int ALLOWED_handle(struct cs_data_t* cs);
 
 #endif

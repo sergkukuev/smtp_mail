@@ -25,13 +25,12 @@ int HELO_handle(struct cs_data_t* cs, char* msg, bool ehlo)
     if (!ehlo) 
         sprintf(bf, "%sHello %s \r\n", RSMTP_250_TEXT, msg);
     else
-        sprintf(bf, "Hello %s \r\n %sPIPELINING\r\n %sHELP \r\n", msg, RSMTP_250_TEXT, RSMTP_250_TEXT); 
-    bf[strlen(bf) + 1] = '\0';
+        sprintf(bf, "%sHello %s\r\n%sPIPELINING\r\n%sHELP\r\n", RSMTP_250_TEXT, msg, RSMTP_250_TEXT, RSMTP_250_TEXT);
     struct sockaddr_in addr;
     socklen_t addrlen;
     get_address(&addr, &addrlen);
     getpeername(cs->fd, (struct sockaddr*) &addr, &addrlen); 
-    result = send_data(cs->fd, bf, sizeof(bf), 0);
+    result = send_data(cs->fd, bf, strlen(bf), 0);
     if (result >= 0 && cs->state == SOCKET_STATE_INIT)    // change socket state
         cs->state = SOCKET_STATE_WAIT;
     return result;
@@ -50,12 +49,13 @@ int MAIL_handle(struct cs_data_t* cs, char* msg)
         char* from = cs->message->from = parse_mail(msg);
         char bf[BUFFER_SIZE] = RSMTP_250;
         if (from == NULL)   sprintf(bf, "%s", RSMTP_450);
-        result = send_data(cs->fd, bf, sizeof(bf), 0);
+        result = send_data(cs->fd, bf, strlen(bf), 0);
         if (result >= 0 && strcmp(bf, RSMTP_250) == 0)    // change socket state
             cs->state = SOCKET_STATE_MAIL;
+        break;
     }
     default:
-        result = send_data(cs->fd, RSMTP_503, sizeof(RSMTP_503), 0);
+        result = send_data(cs->fd, RSMTP_503, strlen(RSMTP_503), 0);
         break;
     }
     return result;
@@ -78,12 +78,13 @@ int RCPT_handle(struct cs_data_t* cs, char* msg)
                 sprintf(bf, "%s", RSMTP_450);
             }
         }
-        result = send_data(cs->fd, bf, sizeof(bf), 0);
+        result = send_data(cs->fd, bf, strlen(bf), 0);
         if (result >= 0 && strcmp(bf, RSMTP_250_RCPT) == 0)    // change socket state
             cs->state = SOCKET_STATE_RCPT;
+        break;
     }
     default:
-        result = send_data(cs->fd, RSMTP_503, sizeof(RSMTP_503), 0);
+        result = send_data(cs->fd, RSMTP_503, strlen(RSMTP_503), 0);
         break;
     }
     return result;
@@ -96,7 +97,7 @@ int DATA_handle(struct cs_data_t* cs, char* msg)
     case SOCKET_STATE_RCPT: {
         if (strcmp(msg, "") == 0 || msg == NULL) {
             char bf[BUFFER_SIZE] = RSMTP_354;
-            result = send_data(cs->fd, bf, sizeof(bf), 0);
+            result = send_data(cs->fd, bf, strlen(bf), 0);
             if (result >= 0) { 
                 cs->state = SOCKET_STATE_DATA;
                 cs->message->body = (char*) malloc(1);
@@ -104,11 +105,12 @@ int DATA_handle(struct cs_data_t* cs, char* msg)
                 cs->message->blen = 0;
             }
         } else {
-            result = send_data(cs->fd, RSMTP_501, sizeof(RSMTP_501), 0);
+            result = send_data(cs->fd, RSMTP_501, strlen(RSMTP_501), 0);
         }
+        break;
     }
     default:
-        result = send_data(cs->fd, RSMTP_503, sizeof(RSMTP_503), 0);
+        result = send_data(cs->fd, RSMTP_503, strlen(RSMTP_503), 0);
         break;
     }
     return result;
@@ -117,7 +119,7 @@ int DATA_handle(struct cs_data_t* cs, char* msg)
 int NOOP_handle(struct cs_data_t* cs)
 {
     char bf[BUFFER_SIZE] = RSMTP_250;
-    return send_data(cs->fd, bf, sizeof(bf), 0);
+    return send_data(cs->fd, bf, strlen(bf), 0);
 }
 
 int RSET_handle(struct cs_data_t* cs, char* msg)
@@ -125,7 +127,7 @@ int RSET_handle(struct cs_data_t* cs, char* msg)
     int result = DATA_FAILED;
     if (strcmp(msg, "") == 0 || msg == NULL) {
         char bf[BUFFER_SIZE] = RSMTP_250_RESET;
-        result = send_data(cs->fd, bf, sizeof(bf), 0);
+        result = send_data(cs->fd, bf, strlen(bf), 0);
         if (result >= 0) {
             cs->state = SOCKET_STATE_WAIT;
             // full clean
@@ -138,18 +140,24 @@ int RSET_handle(struct cs_data_t* cs, char* msg)
             free(cs->message->body);
         }       
     } else {
-        result = send_data(cs->fd, RSMTP_501, sizeof(RSMTP_501), 0);
+        result = send_data(cs->fd, RSMTP_501, strlen(RSMTP_501), 0);
     }
     return result;
 }
 
-int QUIT_handle(struct cs_data_t* cs)
+int QUIT_handle(struct cs_data_t* cs, char* msg)
 {
-    char bf[BUFFER_SIZE] = RSMTP_221;
-    int nbytes = send_data(cs->fd, bf, sizeof(bf), 0);
-    if (nbytes >= 0)    // change socket state
-        cs->state = SOCKET_STATE_CLOSED;
-    return nbytes;
+    int result = DATA_FAILED;
+    if (strcmp(msg, "") == 0 || msg == NULL) {
+        char bf[BUFFER_SIZE] = RSMTP_221;
+        int result = send_data(cs->fd, bf, strlen(bf), 0);
+        if (result >= 0)    // change socket state
+            cs->state = SOCKET_STATE_CLOSED;
+    } else {
+        result = send_data(cs->fd, RSMTP_501, strlen(RSMTP_501), 0);
+    }
+    
+    return result;
 }
 
 // writing message
@@ -164,8 +172,8 @@ int TEXT_handle(struct cs_data_t* cs, char* msg)
             cs->message->blen = sz; 
         }
         strcat(cs->message->body, cs->buf);
-        sprintf(cs->message->body + cs->message->blen, "\n");
-        // cs->message->body[cs->message->blen] = "\n";
+        // sprintf(cs->message->body + cs->message->blen, "\n");
+        cs->message->body[cs->message->blen] = '\n';
         *(cs->message->body + cs->message->blen + 1) = '\0';
     } else {
         // end message
@@ -180,12 +188,5 @@ int TEXT_handle(struct cs_data_t* cs, char* msg)
 int UNDEFINED_handle(struct cs_data_t* cs)
 {
     char bf[BUFFER_SIZE] = RSMTP_500;
-    return send_data(cs->fd, bf, sizeof(bf), 0);
-}
-
-// send client allowed command list
-int ALLOWED_handle(struct cs_data_t* cs)
-{
-    char stub[] = "Nope";
-    return send_data(cs->fd, stub, sizeof(stub), 0);
+    return send_data(cs->fd, bf, strlen(bf), 0);
 }
