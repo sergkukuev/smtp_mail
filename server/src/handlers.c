@@ -125,23 +125,26 @@ int NOOP_handle(struct cs_data_t* cs)
 int RSET_handle(struct cs_data_t* cs, char* msg)
 {
     int result = DATA_FAILED;
-    if (strcmp(msg, "") == 0 || msg == NULL) {
+    //if (msg == NULL || strcmp(msg, "") == 0) {
         char bf[BUFFER_SIZE] = RSMTP_250_RESET;
         result = send_data(cs->fd, bf, strlen(bf), 0);
         if (result >= 0) {
             cs->state = SOCKET_STATE_WAIT;
             // full clean
-            free(cs->message->from);
+            if (cs->message->from != NULL)
+                free(cs->message->from);
             cs->message->from = NULL;
-            for (int i = 0; i <= cs->message->rnum; i++) {
+            if (cs->message->body != NULL)
+                free(cs->message->body);
+            cs->message->body = NULL;
+            for (int i = 0; i < cs->message->rnum; i++) {
                 free(cs->message->to[i]);
                 cs->message->to[i] = NULL;
             }
-            free(cs->message->body);
         }       
-    } else {
-        result = send_data(cs->fd, RSMTP_501, strlen(RSMTP_501), 0);
-    }
+    //} else {
+    //    result = send_data(cs->fd, RSMTP_501, strlen(RSMTP_501), 0);
+    //}
     return result;
 }
 
@@ -153,14 +156,14 @@ int VRFY_handle(struct cs_data_t* cs, char* msg)
 int QUIT_handle(struct cs_data_t* cs, char* msg)
 {
     int result = DATA_FAILED;
-    if (strcmp(msg, "") == 0 || msg == NULL) {
+    //if (strcmp(msg, "") == 0 || msg == NULL) {
         char bf[BUFFER_SIZE] = RSMTP_221;
-        int result = send_data(cs->fd, bf, strlen(bf), 0);
+        result = send_data(cs->fd, bf, strlen(bf), 0);
         if (result >= 0)    // change socket state
             cs->state = SOCKET_STATE_CLOSED;
-    } else {
-        result = send_data(cs->fd, RSMTP_501, strlen(RSMTP_501), 0);
-    }
+    //} else {
+    //    result = send_data(cs->fd, RSMTP_501, strlen(RSMTP_501), 0);
+    //}
     
     return result;
 }
