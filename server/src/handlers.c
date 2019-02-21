@@ -1,4 +1,5 @@
 #include "handlers.h"
+#include "def_smpt.h"
 
 // sending data
 int send_data(int fd, char* bf, size_t bfsz, int flags)
@@ -19,22 +20,26 @@ int recv_data(int fd, char* bf, size_t bfsz, int flags)
 // base handle
 int HELO_handle(struct cs_data_t* cs)
 {
-    char buf[] = "HELO";
-    if (cs->fd > 0)
-        if (send(cs->fd, buf, strlen(buf), 0) < 0)
-            if (errno == EWOULDBLOCK)
-                return 1;
-    return 0;
+    int result = DATA_FAILED;
+    switch (cs->state) {
+    case SOCKET_STATE_INIT:
+        char bf[BUFFER_SIZE];
+        struct sockaddr_in addr;
+        socklen_t addrlen;
+        get_address(&addr, &addrlen);
+        getpeername(cs->fd, &addr, &addrlen);
+        result = recv_data(cs->fd, bf, sizeof(bf), 0);
+        if (result >= 0)    // change socket state
+            cs->state = SOCKET_STATE_WAIT;
+    default:
+        break;
+    }
+    return result;
 }
 
 int EHLO_handle(struct cs_data_t* cs) 
 {
-    char buf[] = "HELO";
-    if (cs->fd > 0)
-        if (send(cs->fd, buf, strlen(buf), 0) < 0)
-            if (errno == EWOULDBLOCK)
-                return 1;
-    return 0;
+    return HELO_handle(cs);
 }
 
 int MAIL_handle(struct cs_data_t* cs)
