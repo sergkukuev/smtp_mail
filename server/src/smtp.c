@@ -32,16 +32,16 @@ int key_switcher(struct cs_data_t* cs, bool* quit)
     strcpy(msg, cs->buf);
     switch(parse_key_word(cs->buf)) {
     case KEY_HELO:
-        err = HELO_handle(cs, msg + 4);
+        err = HELO_handle(cs, msg + 5);
         break;
     case KEY_EHLO:
-        err = EHLO_handle(cs, msg + 4);
+        err = EHLO_handle(cs, msg + 5);
         break;
     case KEY_MAIL:
-        err = MAIL_handle(cs, msg + 4);
+        err = MAIL_handle(cs, msg + 5);
         break;
     case KEY_RCPT:
-        err = RCPT_handle(cs);
+        err = RCPT_handle(cs, msg + 5);
         break;
     case KEY_DATA:
         err = DATA_handle(cs);
@@ -60,8 +60,6 @@ int key_switcher(struct cs_data_t* cs, bool* quit)
     default:
         UNDEFINED_handle(cs);
     }
-
-    //
     free(msg);
     return err;
 }

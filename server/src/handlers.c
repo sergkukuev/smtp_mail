@@ -62,14 +62,31 @@ int MAIL_handle(struct cs_data_t* cs, char* msg)
     return result;
 }
 
-int RCPT_handle(struct cs_data_t* cs)
+int RCPT_handle(struct cs_data_t* cs, char* msg)
 {
-    char buf[] = "HELO";
-    if (cs->fd > 0)
-        if (send(cs->fd, buf, strlen(buf), 0) < 0)
-            if (errno == EWOULDBLOCK)
-                return 1;
-    return 0;
+    int result = DATA_FAILED;
+    switch (cs->state) {
+    case SOCKET_STATE_MAIL:
+    case SOCKET_STATE_RCPT: {
+        // check maximal recepients
+        char bf[BUFFER_SIZE] = "too much recepients";//RSMTP_451;
+        if (cs->message->rnum != 10) {
+            char* to = cs->message->to[cs->message->rnum] = msg;
+            if (to != NULL) {
+                cs->message->rnum++;
+                sprintf(bf, "%s", RSMTP_250);
+            } else {
+                sprintf(bf, "%s", RSMTP_450);
+            }
+        }
+        result = send_data(cs->fd, bf, sizeof(bf), 0);
+        if (result >= 0 && strcmp(bf, RSMTP_250) == 0)    // change socket state
+            cs->state = SOCKET_STATE_RCPT;
+    }
+    default:
+        break;
+    }
+    return result;
 }
 
 int DATA_handle(struct cs_data_t* cs)
@@ -143,10 +160,6 @@ int UNDEFINED_handle(struct cs_data_t* cs)
 // send client allowed command list
 int ALLOWED_handle(struct cs_data_t* cs)
 {
-    char buf[] = "HELO";
-    if (cs->fd > 0)
-        if (send(cs->fd, buf, strlen(buf), 0) < 0)
-            if (errno == EWOULDBLOCK)
-                return 1;
-    return 0;
+    char stub[] = "Nope";
+    return send_data(cs->fd, stub, sizeof(stub), 0);
 }
