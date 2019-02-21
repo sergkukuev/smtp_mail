@@ -91,12 +91,11 @@ int RSET_handle(struct cs_data_t* cs)
 
 int QUIT_handle(struct cs_data_t* cs)
 {
-    char buf[] = "HELO";
-    if (cs->fd > 0)
-        if (send(cs->fd, buf, strlen(buf), 0) < 0)
-            if (errno == EWOULDBLOCK)
-                return 1;
-    return 0;
+    char bf[BUFFER_SIZE] = RSMTP_221;
+    int nbytes = send_data(cs->fd, bf, sizeof(bf), 0);
+    if (nbytes >= 0)    // change socket state
+        cs->state = SOCKET_STATE_CLOSED;
+    return nbytes;
 }
 
 // writing message
