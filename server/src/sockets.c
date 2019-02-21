@@ -179,6 +179,9 @@ void free_client_socket(struct cs_data_t* sock)
 
 struct cs_node_t* delete_sockets_by_state(struct cs_node_t* head, int state)
 {
+	if (head == NULL)
+		return NULL;
+
 	// head delete
 	if (head->cs.state == state) {
 		struct cs_node_t* new_head = head->next;
@@ -270,7 +273,7 @@ void accept_sockets(struct cs_node_t* list, struct cs_node_t** ss_list, fd_set* 
 			}
 			// initialize
 			*ss_list = init_client_socket(*ss_list, fd, BUFFER_SIZE, SOCKET_STATE_START, true, max_fd);
-			FD_SET(fd, readfds);
+			// FD_SET(fd, readfds);
 		}
 	}
 }
@@ -294,14 +297,14 @@ void handle_sockets(struct cs_node_t* list, fd_set* readfds, fd_set* writefds)
 void parse_select(struct process_t* proc)
 {
 	struct timeval tv;	// timeout for select
-	tv.tv_sec = 60;
+	tv.tv_sec = 5;
 	tv.tv_usec = 0;
 
-	/* stub */
+	/* stub 
 	printf("forced determinate\n");
 	proc->worked = false;	// forced stop
 	return;
-	
+	*/
 	// call select: can change timeout
 	int ndesc = select(proc->max_fd + 1, &(proc->readfds), &(proc->writefds), NULL, &tv);
 	switch(ndesc) {
