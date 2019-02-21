@@ -1,19 +1,25 @@
 # Makefile for server
-C = gcc
-STD = -std=c99
-RELEASE = -Wall -o
-DEBUG = -Wall -g
+CC = gcc
+STD = -std=gnu99
 
-all: clean server client
+RFLAGS = -Wall -o
+DFLAGS = -Wall -g3
+# Postfix
+PF = -lrt -lpthread -lresolv
+# Common
+CF = -D_XOPEN_SOURCE
+
+all: clean release
+
+release: server_r
+debug: server_d
 
 # Launch server
-server:
-	$(C) $(STD) $(DEBUG) server.c -o server
+server_r:
+	$(CC) $(STD) $(RFLAGS) sockets.c smtp.c server.c logger.c common.c process.c handlers.c -o server $(PF)
 
-# Launch test client
-client:
-	$(C) $(STD) $(DEBUG) client.c -o client
+server_d:
+	$(CC) $(STD) $(DFLAGS) sockets.c smtp.c server.c logger.c common.c process.c handlers.c -o server $(PF)
 
-# Clean objective files
 clean:
 	rm -rf *.o server client
