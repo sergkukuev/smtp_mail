@@ -83,6 +83,10 @@ struct process_t {
     mqd_t* mq;
     char* mq_name;
 
+    // logger
+    pid_t lg;
+    char* lg_name;
+
     // lists of clients sockets
     struct cs_node_t* ss_list;
     struct cs_node_t* ls_list;

@@ -1,5 +1,6 @@
 #include "sockets.h"
 #include "process.h"
+#include "logger.h"
 
 #include "common.h"
 
@@ -14,7 +15,7 @@ int init_server(void)
     if (fds == NULL)
         return SERVER_FAILED;
 
-    body_process(fds);
+    create_process(fds, create_logger());
     /*pid_t pid = create_process(fds);
     if (pid == -1)
         return SERVER_FAILED;

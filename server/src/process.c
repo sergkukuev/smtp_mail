@@ -6,17 +6,22 @@
 #include <signal.h>
 
 // process initialize
-struct process_t* init_process(pid_t pid, struct ss_node_t* ss) 
+struct process_t* init_process(pid_t pid, pid_t log_pid, struct ss_node_t* ss) 
 {
     struct process_t* proc = (struct process_t*) malloc(sizeof *proc);
     proc->pid = pid;
     proc->worked = true;
     proc->max_fd = -1;
+    char tmp[50];
+
+    // log init
+    sprintf(tmp, "/process%d", log_pid);
+    proc->lg = log_pid;
+    proc->lg_name = tmp;
 
     // mqueue initialize
-    char qname[50];
-    sprintf(qname, "/process%d", getpid());
-    proc->mq_name = qname;
+    sprintf(tmp, "/process%d", getpid());
+    proc->mq_name = tmp;
 
     struct mq_attr attr;
     attr.mq_flags = attr.mq_curmsgs = 0;
@@ -75,33 +80,28 @@ void free_process(struct process_t* proc)
     free(proc->mq);
 
     free(proc);
-    // kill(getpid(), SIGTERM);
-}
-
-void body_process(struct ss_node_t* fd_sock)
-{
-    struct process_t* proc = init_process(getpid(), fd_sock);
-    run_process(proc);
-    free_process(proc);
+    kill(getpid(), SIGTERM);
 }
 
 // process creating
 // return process id or -1
-pid_t create_process(struct ss_node_t* fd_socket)
+struct process_t* create_process(struct ss_node_t* fd_socket, pid_t log_pid)
 {
-    pid_t pid = fork();
-    switch (pid) {
+    struct process_t* proc = NULL;
+    switch (fork()) {
         // process not created
         case -1: 
             perror("fork() failed");
             break;
         // process-child
         case 0:
-            body_process(fd_socket);
+            proc = init_process(getpid(), log_pid, fd_socket);
+            run_process(proc);
+            free_process(proc);
             break;
         // process-parent
         default:
             break;
     }
-    return pid;
+    return proc;
 }

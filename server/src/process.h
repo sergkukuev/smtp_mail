@@ -4,10 +4,7 @@
 #include "common.h"
 
 // create and run process
-// returns process id
-pid_t create_process(struct ss_node_t* socket_fd);
-
-// for debug in one process
-void body_process(struct ss_node_t* fd_sock);
+// returns process structure
+struct process_t* create_process(struct ss_node_t* socket_fd, pid_t log_pid);
 
 #endif

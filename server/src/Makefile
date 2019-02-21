@@ -16,10 +16,10 @@ debug: server_d
 
 # Launch server
 server_r:
-	$(CC) $(STD) $(RFLAGS) sockets.c smtp.c server.c common.c process.c handlers.c -o server $(PF)
+	$(CC) $(STD) $(RFLAGS) sockets.c smtp.c server.c logger.c common.c process.c handlers.c -o server $(PF)
 
 server_d:
-	$(CC) $(STD) $(DFLAGS) sockets.c smtp.c server.c common.c process.c handlers.c -o server $(PF)
+	$(CC) $(STD) $(DFLAGS) sockets.c smtp.c server.c logger.c common.c process.c handlers.c -o server $(PF)
 
 clean:
 	rm -rf *.o server client
