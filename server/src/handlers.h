@@ -4,9 +4,8 @@
 #include "common.h"
 
 // reply function sending data
-#define REP_NOTSEND -1
-#define REP_BLOCK 0
-#define REP_SEND 1
+#define REP_NOTSEND -2
+#define REP_BLOCK -1
 
 // sending data
 int send_data(int fd, char* bf, size_t bfsz, int flags);
