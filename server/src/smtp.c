@@ -66,7 +66,7 @@ void reply_handle(struct cs_data_t* cs)
             default:
                 UNDEFINED_handle(cs);
             }
-            if (err < 0)
+            if (err == REP_NOTSEND)
                 ALLOWED_handle(cs);
             free(msg);
         } else {
