@@ -169,11 +169,11 @@ bool check_mq(mqd_t* mq, fd_set* readfds)
 			if (nbytes > 0) {
 				printf("receive message from mq: %s\n", buf);
 				if (strcmp(buf, "#") == 0)
-					return true;
+					return false;
 			}
 		}
 	}
-	return false;
+	return true;
 }
 
 // accept connections
@@ -182,8 +182,13 @@ void accept_sockets(struct cs_node_t* list, struct cs_node_t* ss_list, fd_set* r
 	for (struct cs_node_t* i = list; i != NULL; i = i->next) {
 		if (FD_ISSET(i->cs.fd, readfds)) {
 			// accept connection
-			// TODO: find example, how send address and len
-			int fd = -1;//accept(i->cs.fd, address, len);
+			struct sockaddr_in addr;
+			memset(&addr, 0, sizeof(addr));
+			addr.sin_family = AF_UNSPEC;
+			addr.sin_addr.s_addr = INADDR_ANY;
+			addr.sin_port = htons(SERVER_PORT_I);
+			socklen_t addrlen = sizeof(addr);
+			int fd = accept(i->cs.fd, (struct sockaddr*) &addr, &addrlen);
 			if (fd == -1) {
 				serv_sock_error(ERR_ACCEPT);
 				continue;
@@ -227,10 +232,11 @@ void parse_select(struct process_t* proc)
 	tv.tv_sec = 60;
 	tv.tv_usec = 0;
 
+	/*
 	printf("forced determinate\n");
 	proc->worked = false;	// forced stop
 	return;
-
+	*/
 	// call select: can change timeout
 	int ndesc = select(proc->max_fd, &(proc->readfds), &(proc->writefds), NULL, &tv);
 	switch(ndesc) {
