@@ -46,6 +46,9 @@ void run_process(struct process_t* proc)
         FD_ZERO(&(proc->readfds));
         FD_ZERO(&(proc->writefds));
 
+        // delete all closed sockets
+        proc->ss_list = delete_sockets_by_state(proc->ss_list, SOCKET_STATE_CLOSED);
+
         // set all sockets to ss_list
         for (struct cs_node_t* i = proc->ls_list; i != NULL; i = i->next)
             FD_SET(i->cs.fd, &(proc->readfds));
