@@ -54,7 +54,6 @@ struct cs_data_t {
     char* buf;
     int offset_buf;
 
-    bool inpmsg;   // input message
     struct msg_t* message;
 };
 
