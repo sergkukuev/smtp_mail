@@ -1,5 +1,13 @@
 #include "handlers.h"
 
+// sending data
+int send_data(int fd, char* bf, size_t bfsz, int flags)
+{
+    if (fd <= 0)    return REP_NOTSEND;
+    int nbytes = send(fd, bf, bfsz, flags);
+    return nbytes < 0 ? ((errno == EWOULDBLOCK) ? REP_BLOCK : REP_NOTSEND) : nbytes;
+}
+
 // base handle
 int HELO_handle(struct cs_data_t* cs)
 {

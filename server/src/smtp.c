@@ -102,13 +102,11 @@ void main_handle(struct cs_data_t* cs)
     if (cs->state == SOCKET_STATE_START) {
         char bf[BUFFER_SIZE];
         sprintf(bf, "%s %s SMTP CCSMTP\n", RSMTP_220, SERVER_DOMAIN);
-        int nbytes = send(cs->fd, bf, strlen(bf), 0);
-        switch (nbytes) {
-        case -1:
-        case 0:
-            if (errno != EWOULDBLOCK)   cs->state = SOCKET_STATE_CLOSED;
+        switch(send_data(cs->fd, bf, strlen(bf), 0)) {
+        case REP_NOTSEND:
+            cs->state = SOCKET_STATE_CLOSED;
             break;
-        default: 
+        default:
             cs->state = SOCKET_STATE_INIT;
             cs->fl_write = false;
             break;
@@ -120,13 +118,11 @@ void main_handle(struct cs_data_t* cs)
     if (bf_left == 0) {
         char bf[BUFFER_SIZE];
         sprintf(bf, RSMTP_500);
-        int nbytes = send(cs->fd, bf, strlen(bf), 0);
-        switch (nbytes) {
-        case -1:
-        case 0:
-            if (errno != EWOULDBLOCK)   cs->state = SOCKET_STATE_CLOSED;
+        switch(send_data(cs->fd, bf, strlen(bf), 0)) {
+        case REP_NOTSEND:
+            cs->state = SOCKET_STATE_CLOSED;
             break;
-        default: 
+        default:
             cs->offset_buf = 0;
             cs->fl_write = false;
             break;

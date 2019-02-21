@@ -3,6 +3,14 @@
 
 #include "common.h"
 
+// reply function sending data
+#define REP_NOTSEND -1
+#define REP_BLOCK 0
+#define REP_SEND 1
+
+// sending data
+int send_data(int fd, char* bf, size_t bfsz, int flags);
+
 // base handlers
 int HELO_handle(struct cs_data_t* cs);
 int EHLO_handle(struct cs_data_t* cs);
