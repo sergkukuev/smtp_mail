@@ -117,11 +117,14 @@ struct ss_node_t* init_serv_sockets()
 }
 
 // init client sockets
-struct cs_data_t create_client_socket(int fd, int state, bool need_msg)
+struct cs_data_t create_client_socket(int fd, int bfsz, int state, bool need_msg)
 {
 	struct cs_data_t cs;
 	cs.fd = fd;
 	cs.state = state;
+	cs.flag = true;
+	cs.buf = (bfsz > 0) ? malloc(bfsz * sizeof(*cs.buf)) : NULL;
+	cs.inpmsg = need_msg;
 	if (need_msg) {
 		cs.message = malloc(sizeof *cs.message);
 		cs.message->to = malloc(10 * sizeof(char));
@@ -134,10 +137,10 @@ struct cs_data_t create_client_socket(int fd, int state, bool need_msg)
 }
 
 // init one client socket and insert to head
-struct cs_node_t* init_client_socket(struct cs_node_t* head, int fd, int state, bool need_msg, int* max_fd)
+struct cs_node_t* init_client_socket(struct cs_node_t* head, int fd, int bfsz, int state, bool need_msg, int* max_fd)
 {
 	struct cs_node_t* node = malloc(sizeof *node);
-	node->cs = create_client_socket(fd, SOCKET_STATE_WAIT, false);
+	node->cs = create_client_socket(fd, bfsz, state, need_msg);
 	node->next = head;
 	head = node;
 	printf("client socket created (%d)\n", node->cs.fd);
@@ -153,7 +156,7 @@ struct cs_node_t* init_client_sockets(struct ss_node_t* ss_list, int* max_fd)
 {
 	struct cs_node_t* head = NULL;
 	for (struct ss_node_t* i = ss_list; i != NULL; i = i->next)
-		head = init_client_socket(head, i->fd, SOCKET_STATE_WAIT, false, max_fd);
+		head = init_client_socket(head, i->fd, 0, SOCKET_STATE_WAIT, false, max_fd);
 	return head;
 }
 
@@ -177,7 +180,7 @@ bool check_mq(mqd_t* mq, fd_set* readfds)
 }
 
 // accept connections
-void accept_sockets(struct cs_node_t* list, struct cs_node_t* ss_list, fd_set* readfds, int* max_fd)
+void accept_sockets(struct cs_node_t* list, struct cs_node_t** ss_list, fd_set* readfds, int* max_fd)
 {
 	for (struct cs_node_t* i = list; i != NULL; i = i->next) {
 		if (FD_ISSET(i->cs.fd, readfds)) {
@@ -205,7 +208,8 @@ void accept_sockets(struct cs_node_t* list, struct cs_node_t* ss_list, fd_set* r
 				continue;
 			}
 			// initialize
-			ss_list = init_client_socket(ss_list, fd, SOCKET_STATE_INIT, true, max_fd);
+			*ss_list = init_client_socket(*ss_list, fd, BUFFER_SIZE, SOCKET_STATE_START, true, max_fd);
+			FD_SET(fd, readfds);
 		}
 	}
 }
@@ -238,7 +242,7 @@ void parse_select(struct process_t* proc)
 	return;
 	*/
 	// call select: can change timeout
-	int ndesc = select(proc->max_fd, &(proc->readfds), &(proc->writefds), NULL, &tv);
+	int ndesc = select(proc->max_fd + 1, &(proc->readfds), &(proc->writefds), NULL, &tv);
 	switch(ndesc) {
 		// error
 		case -1:
@@ -255,7 +259,7 @@ void parse_select(struct process_t* proc)
 		default: {
 			proc->worked = check_mq(proc->mq, &proc->readfds);
 			if (proc->worked) {
-				accept_sockets(proc->ls_list, proc->ss_list, &proc->readfds, &proc->max_fd);
+				accept_sockets(proc->ls_list, &proc->ss_list, &proc->readfds, &proc->max_fd);
 				handle_sockets(proc->ss_list, &proc->readfds, &proc->writefds);
 			}
 		}
