@@ -177,11 +177,6 @@ void free_client_socket(struct cs_data_t* sock)
 	free(sock);
 }
 
-void free_server_socket(struct ss_node_t* sock)
-{
-	free(sock);
-}
-
 struct cs_node_t* delete_sockets_by_state(struct cs_node_t* head, int state)
 {
 	// head delete
