@@ -43,14 +43,21 @@ int EHLO_handle(struct cs_data_t* cs, char* msg)
     return HELO_handle(cs, msg);
 }
 
-int MAIL_handle(struct cs_data_t* cs)
+int MAIL_handle(struct cs_data_t* cs, char* msg)
 {
-    char buf[] = "HELO";
-    if (cs->fd > 0)
-        if (send(cs->fd, buf, strlen(buf), 0) < 0)
-            if (errno == EWOULDBLOCK)
-                return 1;
-    return 0;
+    int result = DATA_FAILED;
+    switch (cs->state) {
+    case SOCKET_STATE_WAIT: {
+        char* from = cs->message->from = msg;
+        char bf[BUFFER_SIZE] = (from != NULL && strcmp(from, "") != 0) ? RSMTP_250 : RSMTP_450;
+        result = send_data(cs->fd, bf, sizeof(bf), 0);
+        if (result >= 0 && strcmp(bf, RSMTP_250) == 0)    // change socket state
+            cs->state = SOCKET_STATE_MAIL;
+    }
+    default:
+        break;
+    }
+    return result;
 }
 
 int RCPT_handle(struct cs_data_t* cs)
@@ -81,12 +88,21 @@ int NOOP_handle(struct cs_data_t* cs)
 
 int RSET_handle(struct cs_data_t* cs)
 {
-    char buf[] = "HELO";
-    if (cs->fd > 0)
-        if (send(cs->fd, buf, strlen(buf), 0) < 0)
-            if (errno == EWOULDBLOCK)
-                return 1;
-    return 0;
+    int result = DATA_FAILED;
+    switch (cs->state) {
+    case SOCKET_STATE_MAIL:
+    case SOCKET_STATE_RCPT:
+    case SOCKET_STATE_WAIT: {
+        char* from = cs->message->from = get_mail();
+        char bf[BUFFER_SIZE] = (from != NULL && strcmp(from, "") != 0) ? RSMTP_250 : RSMTP_450;
+        result = send_data(cs->fd, bf, sizeof(bf), 0);
+        if (result >= 0 && strcmp(bf, RSMTP_250) == 0)    // change socket state
+            cs->state = SOCKET_STATE_MAIL;
+    }
+    default:
+        break;
+    }
+    return result;
 }
 
 int QUIT_handle(struct cs_data_t* cs)

@@ -45,7 +45,7 @@ void reply_handle(struct cs_data_t* cs)
                 err = EHLO_handle(cs, msg + 4);
                 break;
             case KEY_MAIL:
-                err = MAIL_handle(cs);
+                err = MAIL_handle(cs, msg + 4);
                 break;
             case KEY_RCPT:
                 err = RCPT_handle(cs);
