@@ -75,12 +75,8 @@ int DATA_handle(struct cs_data_t* cs)
 
 int NOOP_handle(struct cs_data_t* cs)
 {
-    char buf[] = "HELO";
-    if (cs->fd > 0)
-        if (send(cs->fd, buf, strlen(buf), 0) < 0)
-            if (errno == EWOULDBLOCK)
-                return 1;
-    return 0;
+    char bf[BUFFER_SIZE] = RSMTP_250;
+    return send_data(cs->fd, bf, sizeof(bf), 0);
 }
 
 int RSET_handle(struct cs_data_t* cs)
