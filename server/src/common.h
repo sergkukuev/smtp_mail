@@ -49,7 +49,7 @@ struct ss_node_t {
 struct cs_data_t {
     int fd;
     int state;
-    bool flag;     // false - read set fd, true - write set fd
+    bool fl_write;     // false - read set fd, true - write set fd
 
     char* buf;
     int offset_buf;

@@ -75,7 +75,7 @@ void reply_handle(struct cs_data_t* cs)
         memmove(cs->buf, eol + 2, BUFFER_SIZE - (eol + 2 - cs->buf));
     }
     // set readfds flag
-    cs->flag = false;
+    cs->fl_write = false;
 }
 
 // receive message
@@ -90,7 +90,7 @@ void accept_handle(struct cs_data_t* cs, int bf_left)
         cs->state = SOCKET_STATE_CLOSED;
         break;
     default:
-        if (strstr(cs->buf, "\r\n"))    cs->flag = true;
+        if (strstr(cs->buf, "\r\n"))    cs->fl_write = true;
         break;
     }
 }
@@ -110,7 +110,7 @@ void main_handle(struct cs_data_t* cs)
             break;
         default: 
             cs->state = SOCKET_STATE_INIT;
-            cs->flag = false;
+            cs->fl_write = false;
             break;
         }
         return;
@@ -128,10 +128,10 @@ void main_handle(struct cs_data_t* cs)
             break;
         default: 
             cs->offset_buf = 0;
-            cs->flag = false;
+            cs->fl_write = false;
             break;
         }
     }
     // send or receive
-    cs->flag ? reply_handle(cs) : accept_handle(cs, bf_left);
+    cs->fl_write ? reply_handle(cs) : accept_handle(cs, bf_left);
 }

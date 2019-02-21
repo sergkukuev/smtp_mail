@@ -122,7 +122,7 @@ struct cs_data_t create_client_socket(int fd, int bfsz, int state, bool need_msg
 	struct cs_data_t cs;
 	cs.fd = fd;
 	cs.state = state;
-	cs.flag = true;
+	cs.fl_write = true;
 	cs.buf = (bfsz > 0) ? malloc(bfsz * sizeof(*cs.buf)) : NULL;
 	cs.inpmsg = need_msg;
 	if (need_msg) {
@@ -219,11 +219,11 @@ void handle_sockets(struct cs_node_t* list, fd_set* readfds, fd_set* writefds)
 {
 	for (struct cs_node_t* i = list; i != NULL; i = i->next) {
 		if (FD_ISSET(i->cs.fd, readfds)) {
-			i->cs.flag = false;
+			i->cs.fl_write = false;
 			main_handle(&i->cs);
 		}
 		if (FD_ISSET(i->cs.fd, writefds)) {
-			i->cs.flag = true;
+			i->cs.fl_write = true;
 			main_handle(&i->cs);
 		}
 	}
