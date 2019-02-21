@@ -17,7 +17,10 @@ int save_to_file(char* txt)
     time_t ct = time(NULL);
     char* t = ctime(&ct);
     t[strlen(t) - 1] = '\0';
-    fprintf(lf, "[%s]: %s", t, txt);
+    char msg[BUFFER_SIZE];
+    // variable add '\n' or not
+    (txt[strlen(txt) - 1] == '\n') ? sprintf(msg, "%s", txt) : sprintf(msg, "%s\n", txt); 
+    fprintf(lf, "[%s]: %s", t, msg);
     fflush(lf);
     fclose(lf);
     return 0;
@@ -43,7 +46,7 @@ void run_logger(struct process_t* pr)
                 char msg[BUFFER_SIZE];
                 memset(msg, 0x00, sizeof(msg));
                 if (mq_receive(*(pr->mq), msg, BUFFER_SIZE, NULL) >= 0) {
-                    printf("Logger(%d): Received message <%s>\n", getpid(), msg);
+                    printf("Logger(%d): received message <%s>\n", getpid(), msg);
                     save_to_file(msg);
                     if (strcmp(msg, "#") == 0) {
                         pr->worked = false;

@@ -65,7 +65,7 @@ int key_switcher(struct cs_data_t* cs, char* msg, bool* quit, mqd_t lg)
     // undefined 
     default: {
         char bf[BUFFER_SIZE];
-        sprintf(bf, "command undefined(socket:%d)\n", cs->fd);
+        sprintf(bf, "command undefined(socket:%d)", cs->fd);
         mq_log(lg, bf);
         undef = true;
         UNDEFINED_handle(cs);
@@ -73,7 +73,7 @@ int key_switcher(struct cs_data_t* cs, char* msg, bool* quit, mqd_t lg)
     }
     if (!undef) {
         char bf[BUFFER_SIZE];
-        sprintf(bf, "good parse command(socket:%d)\n", cs->fd);
+        sprintf(bf, "good parse command(socket:%d)", cs->fd);
         mq_log(lg, bf);
     }
     return err;
@@ -121,7 +121,7 @@ void main_handle(struct cs_data_t* cs, mqd_t lg)
 {
     // log
     char bf[BUFFER_SIZE];
-    sprintf(bf, "handle started for socket(%d)\n", cs->fd);
+    sprintf(bf, "handle started for socket(%d)", cs->fd);
     mq_log(lg, bf);
     // send greeting
     if (cs->state == SOCKET_STATE_START) {

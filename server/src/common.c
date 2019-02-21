@@ -6,8 +6,7 @@
 int mq_log(mqd_t lg, char* msg)
 {
     int res = mq_send(lg, msg, strlen(msg), 0); 
-    if (res < 0)
-        perror(msg);
+    if (res == -1)  perror(msg);
     return res;
 }
 

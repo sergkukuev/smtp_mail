@@ -110,9 +110,9 @@ pid_t create_process(struct ss_node_t* fd_socket, pid_t log_pid)
                 proc->lg = lg;
             // write in log
             char bf[BUFFER_SIZE];
-            sprintf(bf, "child process forked with pid(%d)\n", getpid());
+            sprintf(bf, "child process forked with pid(%d)", getpid());
             mq_log(proc->lg, bf);
-            sprintf(bf, "his parent pid(%d)\n", getppid());
+            sprintf(bf, "his parent pid(%d)", getppid());
             mq_log(proc->lg, bf);
             
             run_process(proc);
