@@ -83,4 +83,8 @@ struct process_t {
     struct cs_node_t* ls_list;
 };
 
+/// common functions
+
+void get_address(struct sockaddr_in* addr, socklen_t* addrlen);
+
 #endif
