@@ -25,7 +25,7 @@ int RSET_handle(struct cs_data_t* cs);
 int QUIT_handle(struct cs_data_t* cs);
 
 // connect with maildir folder
-int TEXT_handle(struct cs_data_t* cs);
+int TEXT_handle(struct cs_data_t* cs, char* msg);
 
 // undefined command
 int UNDEFINED_handle(struct cs_data_t* cs);

@@ -119,6 +119,7 @@ int RSET_handle(struct cs_data_t* cs)
 {
     int result = DATA_FAILED;
     switch (cs->state) {
+    case SOCKET_STATE_TEXT:
     case SOCKET_STATE_MAIL:
     case SOCKET_STATE_RCPT:
     case SOCKET_STATE_WAIT: {
@@ -129,6 +130,7 @@ int RSET_handle(struct cs_data_t* cs)
             free(cs->message->to[i]);
             cs->message->to[i] = NULL;
         }
+        free(cs->message->body);
         char bf[BUFFER_SIZE] = RSMTP_250;
         result = send_data(cs->fd, bf, sizeof(bf), 0);
         if (result >= 0)    // change socket state
@@ -150,14 +152,23 @@ int QUIT_handle(struct cs_data_t* cs)
 }
 
 // writing message
-int TEXT_handle(struct cs_data_t* cs)
+int TEXT_handle(struct cs_data_t* cs, char* msg)
 {
-    char buf[] = "HELO";
-    if (cs->fd > 0)
-        if (send(cs->fd, buf, strlen(buf), 0) < 0)
-            if (errno == EWOULDBLOCK)
-                return 1;
-    return 0;
+    int result = 0;
+    if (strcmp(cs->buf, ".") != 0) {
+        if (strlen(cs->message->body) + strlen(cs->buf) >= cs->message->blen) {
+            // TODO: reallocate
+        }
+        strcat(cs->message->body, cs->buf);
+        cs->message->body[cs->message->blen] = "\n";
+        cs->message->body[cs->message->blen + 1] = "\0";
+    } else {
+        // end message
+        save_message(cs->message);
+        cs->state = SOCKET_STATE_TEXT;
+        result = RSET_handle(cs);
+    }
+    return result;
 }
 
 // undefined
