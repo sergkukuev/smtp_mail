@@ -157,7 +157,10 @@ int TEXT_handle(struct cs_data_t* cs, char* msg)
     int result = 0;
     if (strcmp(cs->buf, ".") != 0) {
         if (strlen(cs->message->body) + strlen(cs->buf) >= cs->message->blen) {
-            // TODO: reallocate
+            // reallocate
+            int sz = strlen(cs->message->body) + BUFFER_SIZE * 2;
+            cs->message->body = (char*)realloc(cs->message->body, sz);
+            cs->message->blen = sz; 
         }
         strcat(cs->message->body, cs->buf);
         cs->message->body[cs->message->blen] = "\n";
