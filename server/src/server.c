@@ -5,34 +5,40 @@
 #include "common.h"
 
 #include <errno.h>
+#include <unistd.h>
 
 #define SERVER_FAILED -1
 #define SERVER_FINISH 0
 
-int init_server(void)
+// pid_t processes and logger
+int init_server(pid_t* pr, pid_t* lg)
 {
     struct ss_node_t* fds = init_serv_sockets();
     if (fds == NULL)
         return SERVER_FAILED;
 
-    create_process(fds, create_logger());
-    /*pid_t pid = create_process(fds);
-    if (pid == -1)
+    *lg = create_logger();
+    if (*lg == -1)
         return SERVER_FAILED;
-    */
-    /*  TODO: 
-        
-        init_logger()
-        init_processes()
-    */
-   return 0;
+
+    *pr = create_process(fds, *lg);
+    if (*pr == -1)
+        return SERVER_FAILED;
+    return 0;
 }
 
-int run_server()
+int run_server(pid_t pr, pid_t lg)
 {
-    int state = 1;
-    while(state == 1) { state = 0; }
-    return state;
+    // period send info we are alive 
+    char bf[100];
+    sprintf(bf, "/process%d", lg);
+    mqd_t mq = mq_open(bf, O_WRONLY);   // bf - name of queue
+    while(1) {
+        sprintf(bf, "%s", "server is alive");
+        mq_log(mq, bf);
+        sleep(200);
+    }
+    return 0;
 }
 
 // parse command line
@@ -46,10 +52,11 @@ void parse_cmd(int argc, char** argv)
 int main(int argc, char** argv)
 {
     parse_cmd(argc, argv);
-    if (init_server() == SERVER_FAILED) {
+    pid_t pr, lg;
+    if (init_server(&pr, &lg) == SERVER_FAILED) {
         perror("init_server() failed");
         exit(SERVER_FAILED);
     }
 
-    return run_server();
+    return run_server(pr, lg);
 }
