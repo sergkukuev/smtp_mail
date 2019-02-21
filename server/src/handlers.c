@@ -3,9 +3,17 @@
 // sending data
 int send_data(int fd, char* bf, size_t bfsz, int flags)
 {
-    if (fd <= 0)    return REP_NOTSEND;
+    if (fd <= 0)    return DATA_FAILED;
     int nbytes = send(fd, bf, bfsz, flags);
-    return nbytes < 0 ? ((errno == EWOULDBLOCK) ? REP_BLOCK : REP_NOTSEND) : nbytes;
+    return nbytes < 0 ? ((errno == EWOULDBLOCK) ? DATA_BLOCK : DATA_FAILED) : nbytes;
+}
+
+// recv data
+int recv_data(int fd, char* bf, size_t bfsz, int flags)
+{
+    if (fd <= 0)    return DATA_FAILED;
+    int nbytes = recv(fd, bf, bfsz, flags);
+    return nbytes < 0 ? ((errno == EWOULDBLOCK) ? DATA_BLOCK : DATA_FAILED) : nbytes;
 }
 
 // base handle

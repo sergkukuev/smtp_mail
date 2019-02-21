@@ -66,7 +66,7 @@ void reply_handle(struct cs_data_t* cs)
             default:
                 UNDEFINED_handle(cs);
             }
-            if (err == REP_NOTSEND)
+            if (err == DATA_FAILED)
                 ALLOWED_handle(cs);
             free(msg);
         } else {
@@ -81,12 +81,11 @@ void reply_handle(struct cs_data_t* cs)
 // receive message
 void accept_handle(struct cs_data_t* cs, int bf_left)
 {
-    int nbytes = recv(cs->fd, cs->buf + cs->offset_buf, bf_left, 0);
-    switch (nbytes) {
-    case -1:
-        if (errno != EWOULDBLOCK)   cs->state = SOCKET_STATE_CLOSED;
+    switch (recv_data(cs->fd, cs->buf + cs->offset_buf, bf_left, 0)) {
+    case DATA_BLOCK:
         break;
-    case 0:
+    case DATA_FAILED:
+    case DATA_EMPTY:
         cs->state = SOCKET_STATE_CLOSED;
         break;
     default:
@@ -103,7 +102,9 @@ void main_handle(struct cs_data_t* cs)
         char bf[BUFFER_SIZE];
         sprintf(bf, "%s %s SMTP CCSMTP\n", RSMTP_220, SERVER_DOMAIN);
         switch(send_data(cs->fd, bf, strlen(bf), 0)) {
-        case REP_NOTSEND:
+        case DATA_BLOCK:
+            break;
+        case DATA_FAILED:
             cs->state = SOCKET_STATE_CLOSED;
             break;
         default:
@@ -119,7 +120,9 @@ void main_handle(struct cs_data_t* cs)
         char bf[BUFFER_SIZE];
         sprintf(bf, RSMTP_500);
         switch(send_data(cs->fd, bf, strlen(bf), 0)) {
-        case REP_NOTSEND:
+        case DATA_BLOCK:
+            break;
+        case DATA_FAILED:
             cs->state = SOCKET_STATE_CLOSED;
             break;
         default:
