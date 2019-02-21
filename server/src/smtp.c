@@ -29,8 +29,8 @@ int parse_key_word(char* key)
 // send message
 void reply_handle(struct cs_data_t* cs) 
 {
-    char* eol = strstr(cs->buf, "\r\n");
-    while(eol) {
+    while(strstr(cs->buf, "\r\n")) {
+        char* eol = strstr(cs->buf, "\r\n");
         eol[0] = '\0';
         printf("client: %d, msg: %s\n", cs->fd, cs->buf);
         if (!cs->inpmsg) {
@@ -72,7 +72,6 @@ void reply_handle(struct cs_data_t* cs)
         } else {
             TEXT_handle(cs);
         }
-        eol = strstr(cs->buf, "\r\n");
         memmove(cs->buf, eol + 2, BUFFER_SIZE - (eol + 2 - cs->buf));
     }
     // set readfds flag
