@@ -14,10 +14,11 @@ int init_server(void)
     if (fds == NULL)
         return SERVER_FAILED;
 
-    pid_t pid = create_process(fds);
+    body_process(fds);
+    /*pid_t pid = create_process(fds);
     if (pid == -1)
         return SERVER_FAILED;
-
+    */
     /*  TODO: 
         
         init_logger()
