@@ -91,12 +91,22 @@ int RCPT_handle(struct cs_data_t* cs, char* msg)
 
 int DATA_handle(struct cs_data_t* cs)
 {
-    char buf[] = "HELO";
-    if (cs->fd > 0)
-        if (send(cs->fd, buf, strlen(buf), 0) < 0)
-            if (errno == EWOULDBLOCK)
-                return 1;
-    return 0;
+    int result = DATA_FAILED;
+    switch (cs->state) {
+    case SOCKET_STATE_RCPT: {
+        char bf[BUFFER_SIZE] = RSMTP_354;
+        result = send_data(cs->fd, bf, sizeof(bf), 0);
+        if (result >= 0) { 
+            cs->state = SOCKET_STATE_DATA;
+            cs->message->body = (char*) malloc(1);
+            cs->message->body[0] = '\0';
+            cs->message->blen = 0;
+        }
+    }
+    default:
+        break;
+    }
+    return result;
 }
 
 int NOOP_handle(struct cs_data_t* cs)
