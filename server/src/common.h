@@ -25,8 +25,6 @@
 #define MAILDIR "../maildir/"
 #define MAILSTART '<'
 #define MAILEND '>'
-#define DOMAINSTART ' '
-#define DOMAINEND '\0'
 
 // socket state
 #define SOCKET_STATE_INIT 0
