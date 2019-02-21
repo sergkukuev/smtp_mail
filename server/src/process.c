@@ -65,12 +65,14 @@ void run_process(struct process_t* proc)
 // cleanup
 void free_process(struct process_t* proc)
 {
-    // TODO: free sockets
+    delete_client_sockets(&proc->ls_list);
+    delete_client_sockets(&proc->ss_list);
     mq_close(*(proc->mq));
     mq_unlink(proc->mq_name);
+    free(proc->mq);
 
     free(proc);
-    kill(getpid(), SIGTERM);
+    // kill(getpid(), SIGTERM);
 }
 
 void body_process(struct ss_node_t* fd_sock)

@@ -159,6 +159,76 @@ struct cs_node_t* init_client_sockets(struct ss_node_t* ss_list, int* max_fd)
 	return head;
 }
 
+void free_client_socket(struct cs_data_t* sock)
+{
+	if (sock->message != NULL) {
+		for (int i = 0; i < sock->message->rnum; i++) {
+			if (sock->message->to[i] != NULL)
+				free(sock->message->to[i]);
+		}
+		if (sock->message->from != NULL)
+			free(sock->message->from);
+		if (sock->message->body != NULL)
+			free(sock->message->body);
+		free(sock->message);
+	}
+	if (sock->buf != NULL)
+		free(sock->buf);
+	free(sock);
+}
+
+void free_server_socket(struct ss_node_t* sock)
+{
+	free(sock);
+}
+
+struct cs_node_t* delete_sockets_by_state(struct cs_node_t* head, int state)
+{
+	// head delete
+	if (head->cs.state == state) {
+		struct cs_node_t* new_head = head->next;
+		free_client_socket(&head->cs);
+		head = new_head;
+	}
+
+	// other
+	struct cs_node_t* prev = head;
+	for(struct cs_node_t* i = head; i != NULL; i = i->next) {
+		if (i->cs.state == state) {
+			prev->next = i->next;
+			free_client_socket(&i->cs);
+			continue;
+		}
+		prev = i;
+	}
+	return head;
+}
+
+int delete_client_sockets(struct cs_node_t** cs_list/*, struct ss_node_t** ss_list*/)
+{
+	int num = 0;
+	// clients
+	struct cs_node_t* next = NULL;
+	for (struct cs_node_t* i = *cs_list; i != NULL; i = next) {
+		num++;
+		next = i->next;
+		free_client_socket(&i->cs);
+	}
+
+	// servers
+	/*
+	struct ss_node_t* snext = NULL;
+	for (struct ss_node_t* i = *ss_list; i != NULL; i = snext) {
+		num++;
+		snext = i->next;
+		free_server_socket(i);
+	}
+	*/
+	*cs_list = NULL;
+	//*ss_list = NULL;
+	return num;
+}
+
 // checkers message queue on exit command
 bool check_mq(mqd_t* mq, fd_set* readfds)
 {
@@ -232,11 +302,11 @@ void parse_select(struct process_t* proc)
 	tv.tv_sec = 60;
 	tv.tv_usec = 0;
 
-	/*
+	/* stub */
 	printf("forced determinate\n");
 	proc->worked = false;	// forced stop
 	return;
-	*/
+	
 	// call select: can change timeout
 	int ndesc = select(proc->max_fd + 1, &(proc->readfds), &(proc->writefds), NULL, &tv);
 	switch(ndesc) {
