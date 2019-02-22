@@ -1,5 +1,5 @@
 #include "handlers.h"
-#include "def_smpt.h"
+#include "smtp_def.h"
 
 // sending data
 int send_data(int fd, char* bf, size_t bfsz, int flags)
@@ -46,7 +46,7 @@ int MAIL_handle(struct cs_data_t* cs, char* msg)
     int result = DATA_FAILED;
     switch (cs->state) {
     case SOCKET_STATE_WAIT: {
-        char* from = cs->message->from = parse_mail(msg);
+        char* from = cs->msg->from = parse_mail(msg);
         char bf[BUFFER_SIZE] = RSMTP_250;
         if (from == NULL)   sprintf(bf, "%s", RSMTP_450);
         result = send_data(cs->fd, bf, strlen(bf), 0);
@@ -69,10 +69,10 @@ int RCPT_handle(struct cs_data_t* cs, char* msg)
     case SOCKET_STATE_RCPT: {
         // check maximal recepients
         char bf[BUFFER_SIZE] = RSMTP_451;
-        if (cs->message->rnum != 10) {
-            char* to = cs->message->to[cs->message->rnum] = parse_mail(msg);
+        if (cs->msg->rnum != 10) {
+            char* to = cs->msg->to[cs->msg->rnum] = parse_mail(msg);
             if (to != NULL) {
-                cs->message->rnum++;
+                cs->msg->rnum++;
                 sprintf(bf, "%s", RSMTP_250_RCPT);
             } else {
                 sprintf(bf, "%s", RSMTP_450);
@@ -100,9 +100,9 @@ int DATA_handle(struct cs_data_t* cs, char* msg)
             result = send_data(cs->fd, bf, strlen(bf), 0);
             if (result >= 0) { 
                 cs->state = SOCKET_STATE_DATA;
-                cs->message->body = (char*) malloc(1);
-                cs->message->body[0] = '\0';
-                cs->message->blen = 0;
+                cs->msg->body = (char*) malloc(1);
+                cs->msg->body[0] = '\0';
+                cs->msg->blen = 0;
             }
         //} else {
         //    result = send_data(cs->fd, RSMTP_501, strlen(RSMTP_501), 0);
@@ -131,15 +131,15 @@ int RSET_handle(struct cs_data_t* cs, char* msg)
         if (result >= 0) {
             cs->state = SOCKET_STATE_WAIT;
             // full clean
-            if (cs->message->from != NULL)
-                free(cs->message->from);
-            cs->message->from = NULL;
-            if (cs->message->body != NULL)
-                free(cs->message->body);
-            cs->message->body = NULL;
-            for (int i = 0; i < cs->message->rnum; i++) {
-                free(cs->message->to[i]);
-                cs->message->to[i] = NULL;
+            if (cs->msg->from != NULL)
+                free(cs->msg->from);
+            cs->msg->from = NULL;
+            if (cs->msg->body != NULL)
+                free(cs->msg->body);
+            cs->msg->body = NULL;
+            for (int i = 0; i < cs->msg->rnum; i++) {
+                free(cs->msg->to[i]);
+                cs->msg->to[i] = NULL;
             }
         }       
     //} else {
@@ -173,19 +173,19 @@ int TEXT_handle(struct cs_data_t* cs, char* msg)
 {
     int result = 0;
     if (strcmp(cs->buf, ".") != 0) {
-        if (strlen(cs->message->body) + strlen(cs->buf) >= cs->message->blen) {
+        if (strlen(cs->msg->body) + strlen(cs->buf) >= cs->msg->blen) {
             // reallocate
-            int sz = strlen(cs->message->body) + BUFFER_SIZE * 2;
-            cs->message->body = (char*)realloc(cs->message->body, sz);
-            cs->message->blen = sz; 
+            int sz = strlen(cs->msg->body) + BUFFER_SIZE * 2;
+            cs->msg->body = (char*)realloc(cs->msg->body, sz);
+            cs->msg->blen = sz; 
         }
-        strcat(cs->message->body, cs->buf);
-        // sprintf(cs->message->body + cs->message->blen, "\n");
-        cs->message->body[cs->message->blen] = '\n';
-        *(cs->message->body + cs->message->blen + 1) = '\0';
+        strcat(cs->msg->body, cs->buf);
+        // sprintf(cs->msg->body + cs->msg->blen, "\n");
+        cs->msg->body[cs->msg->blen] = '\n';
+        *(cs->msg->body + cs->msg->blen + 1) = '\0';
     } else {
         // end message
-        save_message(cs->message);
+        save_message(cs->msg);
         cs->state = SOCKET_STATE_TEXT;
         result = RSET_handle(cs, NULL);
     }
