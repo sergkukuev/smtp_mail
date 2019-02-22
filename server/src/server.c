@@ -3,28 +3,27 @@
 #include "logger.h"
 
 #include "common.h"
-
-#include <errno.h>
-#include <unistd.h>
+#include <mqueue.h>
 
 #define SERVER_FAILED -1
-#define SERVER_FINISH 0
+#define SERVER_SUCCESS 0
 
 // pid_t processes and logger
 int init_server(pid_t* pr, pid_t* lg)
 {
-    struct ss_node_t* fds = init_serv_sockets();
-    if (fds == NULL)
+    int sfd = init_listen_socket();
+    if (sfd < 0)
         return SERVER_FAILED;
 
     *lg = create_logger();
     if (*lg == -1)
         return SERVER_FAILED;
 
-    *pr = create_process(fds, *lg);
+    int n = 1;
+    pr = create_processes(sfd, *lg, &n);
     if (*pr == -1)
         return SERVER_FAILED;
-    return 0;
+    return SERVER_SUCCESS;
 }
 
 int run_server(pid_t pr, pid_t lg)
@@ -38,7 +37,7 @@ int run_server(pid_t pr, pid_t lg)
         mq_log(mq, bf);
         sleep(200);
     }
-    return 0;
+    return SERVER_SUCCESS;
 }
 
 // parse command line
