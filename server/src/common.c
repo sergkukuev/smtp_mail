@@ -1,9 +1,10 @@
 #include "common.h"
 
-#include <sys/time.h>
 #include <sys/stat.h>
+#include <sys/time.h>
+#include <mqueue.h>
 
-int mq_log(mqd_t lg, char* msg)
+int mq_log(int lg, char* msg)
 {
     int res = mq_send(lg, msg, strlen(msg), 0); 
     if (res == -1)  perror(msg);
@@ -123,4 +124,3 @@ int save_message(struct msg_t *message) {
 	}
 	return 0;
 }
-			

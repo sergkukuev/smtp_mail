@@ -5,13 +5,13 @@
 #include <errno.h>
 #include <stdio.h>
 #include <stdlib.h>
+#include <unistd.h>
+#include <sys/types.h>
+#include <netinet/in.h>
 #include <stdbool.h>
 
-#include <sys/socket.h>
-#include <arpa/inet.h>
-#include <netinet/in.h>
-
-#include <mqueue.h>
+////////////////////////////////////////////////////////////////////////////////////////////////////
+// DEFINES
 
 // server data
 #define SERVER_ADDR "0.0.0.0"
@@ -19,12 +19,7 @@
 #define SERVER_DOMAIN "myserver.ru"
 #define BUFFER_SIZE 1024
 #define BACKLOG_SIZE 3
-
-// maildir 
-#define PARSE_FAILED -1
-#define MAILDIR "../maildir/"
-#define MAILSTART '<'
-#define MAILEND '>'
+#define SELECT_TIMEOUT 60
 
 // socket state
 #define SOCKET_NOSTATE -1
@@ -36,6 +31,12 @@
 #define SOCKET_STATE_TEXT 5
 #define SOCKET_STATE_CLOSED 5
 #define SOCKET_STATE_START 6
+
+// maildir 
+#define PARSE_FAILED -1
+#define MAILDIR "../maildir/"
+#define MAILSTART '<'
+#define MAILEND '>'
 
 //struct of message
 struct msg_t {
@@ -51,8 +52,9 @@ struct cs_data_t {
     int fd;
     int state;
     char* buf;
+    bool flw;
     int offset;
-    struct msg_t* msg
+    struct msg_t* msg;
 };
 
 // node of client socket
@@ -61,34 +63,12 @@ struct cs_node_t {
     struct cs_node_t* next;
 };
 
-// struct of process data
-struct process_t {
-    pid_t pid;
-    bool worked;
-    int max_fd;
-
-    // sets
-    fd_set writefds;
-    fd_set readfds;
-
-    // message queue params
-    mqd_t* mq;
-    char* mq_name;
-
-    // logger
-    mqd_t lg;
-    char* lg_name;
-
-    // lists of clients sockets
-    struct cs_node_t* ss_list;
-    struct cs_node_t* ls_list;
-};
-
-/// common functions
+////////////////////////////////////////////////////////////////////////////////////////////////////
+// FUNCTIONS
 
 void get_address(struct sockaddr_in* addr, socklen_t* addrlen);
 char* parse_mail(char* bf);
 int save_message(struct msg_t* msg);
-int mq_log(mqd_t lg, char* msg);
+int mq_log(int lg, char* msg);
 
-#endif
+#endif // !__COMMON_H__
