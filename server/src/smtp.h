@@ -4,6 +4,6 @@
 #include "common.h"
 
 // main smtp handler (can parse all command)
-void main_handle(struct cs_data_t* cs, mqd_t lg);
+void main_handle(struct cs_data_t* cs, int lg);
 
 #endif // !__SMTP_H__
