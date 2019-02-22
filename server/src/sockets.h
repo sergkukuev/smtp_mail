@@ -25,7 +25,8 @@ struct cs_node_t* close_client_socket(struct cs_node_t* node_cs);
 // state = SOCKET_NOSTATE - close all sockets in list
 void close_client_sockets_by_state(struct cs_node_t** head_cs, int state);
 
-// parse result function select() inside process
-void parse_select(struct process_t* proc);
+// accept client socket
+// return client data
+struct cs_data_t* accept_client_socket(int fd);
 
 #endif

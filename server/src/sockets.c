@@ -1,7 +1,11 @@
 #include "sockets.h"
-#include "smtp.h"
 
-#include <sys/types.h>
+#include <stdio.h>
+#include <stdlib.h>
+#include <string.h>
+
+#include <sys/socket.h>
+#include <arpa/inet.h>
 #include <unistd.h>
 #include <netdb.h>
 #include <fcntl.h>
@@ -175,7 +179,7 @@ void close_client_sockets_by_state(struct cs_node_t** head, int state)
 			if (prev == NULL)	// move head
 				*head = tmp->next;
 			prev->next = tmp->next;
-			if (close(&tmp->cs->fd) != 0)	// close socket
+			if (close(tmp->cs->fd) != 0)	// close socket
 				parse_error(ERR_CLOSE);
 			free_client_data(&tmp->cs);
 			tmp = prev->next;
@@ -183,105 +187,23 @@ void close_client_sockets_by_state(struct cs_node_t** head, int state)
 	}
 }
 
-// checkers message queue on exit command
-bool check_mq(mqd_t* mq, fd_set* readfds)
-{
-	if (mq != NULL) {
-		// receive message
-		if (FD_ISSET(*mq, readfds)) {
-			char buf[BUFFER_SIZE];
-			memset(buf, 0x00, sizeof(buf));
-			int nbytes = mq_receive(*mq, buf, BUFFER_SIZE, NULL);
-			if (nbytes > 0) {
-				printf("Server(%d): receive message from mq <%s>\n", getpid(), buf);
-				if (strcmp(buf, "#") == 0)
-					return false;
-			}
-		}
-	}
-	return true;
-}
-
 // accept connections
-void accept_sockets(struct cs_node_t* list, struct cs_node_t** ss_list, fd_set* readfds, int* max_fd)
+// fd - listen file description
+struct cs_data_t* accept_client_socket(int fd)
 {
-	for (struct cs_node_t* i = list; i != NULL; i = i->next) {
-		if (FD_ISSET(i->cs.fd, readfds)) {
-			// accept connection
-			struct sockaddr_in addr;
-			socklen_t addrlen;
-			get_address(&addr, &addrlen);
-			int fd = accept(i->cs.fd, (struct sockaddr*) &addr, &addrlen);
-			if (fd == -1) {
-				serv_sock_error(ERR_ACCEPT);
-				continue;
-			}
-			// get flags
-			int flags = fcntl(fd, F_GETFL, 0); 
-			if (flags == -1) {
-				serv_sock_error(ERR_FCNTL);
-				continue;
-			}
-			// set nonblock flag
-			if (fcntl(fd, F_SETFL, flags | O_NONBLOCK) == -1) {
-				serv_sock_error(ERR_FCNTL);
-				continue;
-			}
-			// initialize
-			*ss_list = init_client_socket(*ss_list, fd, BUFFER_SIZE, SOCKET_STATE_START, true, max_fd);
-			// FD_SET(fd, readfds);
-		}
-	}
-}
-
-// handle connections
-void handle_sockets(struct cs_node_t* list, fd_set* readfds, fd_set* writefds, mqd_t lg)
-{
-	for (struct cs_node_t* i = list; i != NULL; i = i->next) {
-		if (FD_ISSET(i->cs.fd, readfds)) {
-			i->cs.fl_write = false;
-			main_handle(&i->cs, lg);
-		}
-		if (FD_ISSET(i->cs.fd, writefds)) {
-			i->cs.fl_write = true;
-			main_handle(&i->cs, lg);
-		}
-	}
-}
-
-// parser select()
-void parse_select(struct process_t* proc)
-{
-	struct timeval tv;	// timeout for select
-	tv.tv_sec = 5;
-	tv.tv_usec = 0;
-
-	/* stub 
-	printf("forced determinate\n");
-	proc->worked = false;	// forced stop
-	return;
-	*/
-	// call select: can change timeout
-	int ndesc = select(proc->max_fd + 1, &(proc->readfds), &(proc->writefds), NULL, &tv);
-	switch(ndesc) {
-		// error
-		case -1:
-			perror("select() failed");
-			break;
-		// no events - close sockets
-		case 0:
-			printf("Server(%d): Timeout\n", getpid());
-			for (struct cs_node_t* i = proc->ss_list; i != NULL; i = i->next)
-				if (!FD_ISSET(i->cs.fd, &(proc->readfds)))
-					i->cs.state = SOCKET_STATE_CLOSED;
-			break;
-		// sockets ready - need checks
-		default: {
-			proc->worked = check_mq(proc->mq, &proc->readfds);
-			if (proc->worked) {
-				accept_sockets(proc->ls_list, &proc->ss_list, &proc->readfds, &proc->max_fd);
-				handle_sockets(proc->ss_list, &proc->readfds, &proc->writefds, proc->lg);
-			}
-		}
-	}
+	// accept connection
+	struct sockaddr_in addr;
+	socklen_t addrlen;
+	get_address(&addr, &addrlen);
+	int new_fd = accept(fd, (struct sockaddr*) &addr, &addrlen);
+	if (new_fd == -1)
+		parse_error(ERR_ACCEPT);
+	// get flags
+	int flags = fcntl(fd, F_GETFL, 0); 
+	if (flags == -1)
+		parse_error(ERR_FCNTL);
+	// set nonblock flag
+	if (fcntl(fd, F_SETFL, flags | O_NONBLOCK) == -1);
+		parse_error(ERR_FCNTL);
+	return (new_fd >= 0) ? bind_client_data(new_fd, SOCKET_STATE_INIT) : NULL;
 }
