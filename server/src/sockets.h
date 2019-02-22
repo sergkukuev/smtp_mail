@@ -3,21 +3,27 @@
 
 #include "common.h"
 
-// server sockets initialization by getaddrinfo()
-// returns head-pointer of list
-struct ss_node_t* init_serv_sockets();
+// initialize listen socket
+// returns fd
+int init_listen_socket();
 
-// client sockets initialization
-// returns head-pointer of list
-struct cs_node_t* init_client_sockets(struct ss_node_t* ss_list, int* max_fd);
+// close listen socket
+void close_listen_socket(int fd);
 
-// delete all clients sockets by state
-// returns new head header
-struct cs_node_t* delete_sockets_by_state(struct cs_node_t* cs, int state);
+// bind data to a socket
+// returns data of socket
+struct cs_data_t* bind_client_data(int fd, int state);
 
-// delete all sockets
-// return numeric sockets
-int delete_client_sockets(struct cs_node_t** cs);
+// free data of client
+void free_client_data(struct cs_data_t** data);
+
+// close client socket
+// returns node_cs->next
+struct cs_node_t* close_client_socket(struct cs_node_t* node_cs);
+
+// close clients socket by state
+// state = SOCKET_NOSTATE - close all sockets in list
+void close_client_sockets_by_state(struct cs_node_t** head_cs, int state);
 
 // parse result function select() inside process
 void parse_select(struct process_t* proc);
