@@ -3,6 +3,30 @@
 #include <sys/stat.h>
 #include <sys/time.h>
 #include <mqueue.h>
+#include <time.h>
+
+int save_to_file(char* fname, char* txt, bool info)
+{
+    FILE* lf = fopen(fname, "a");
+    if (!lf) {
+        perror("error opening log file(server_log)");
+        return -1;
+    }
+    char msg[BUFFER_SIZE];
+    // variable add '\n' or not
+    (txt[strlen(txt) - 1] == '\n') ? sprintf(msg, "%s", txt) : sprintf(msg, "%s\n", txt); 
+    // write with timetag
+    if (info) {
+        time_t ct = time(NULL);
+        char* t = ctime(&ct);
+        t[strlen(t) - 1] = '\0';
+        fprintf(lf, "[%s]: %s", t, msg);
+    } else  // without timetag
+        fprintf(lf, "%s", msg);
+    fflush(lf);
+    fclose(lf);
+    return 0;
+}
 
 int mq_log(int lg, char* msg)
 {

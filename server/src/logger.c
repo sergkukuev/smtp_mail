@@ -4,26 +4,8 @@
 #include <sys/select.h>
 #include <mqueue.h>
 #include <signal.h>
-#include <time.h>
 
-int save_to_file(char* txt)
-{
-    FILE* lf = fopen("server_log", "a");
-    if (!lf) {
-        perror("error opening log file(server_log)");
-        return -1;
-    }
-    time_t ct = time(NULL);
-    char* t = ctime(&ct);
-    t[strlen(t) - 1] = '\0';
-    char msg[BUFFER_SIZE];
-    // variable add '\n' or not
-    (txt[strlen(txt) - 1] == '\n') ? sprintf(msg, "%s", txt) : sprintf(msg, "%s\n", txt); 
-    fprintf(lf, "[%s]: %s", t, msg);
-    fflush(lf);
-    fclose(lf);
-    return 0;
-}
+#define LOG(msg) save_to_file("server_log", msg, true)
 
 void run_logger(struct process_t* pr) 
 {
@@ -33,24 +15,18 @@ void run_logger(struct process_t* pr)
 		tv.tv_usec = 0;
 
 		FD_ZERO(&(pr->readfds));
-		if (pr->mq != NULL)
-			FD_SET(*(pr->mq), &(pr->readfds));
-
+		if (pr->lg != -1)   FD_SET(pr->lg, &(pr->readfds));
 		switch(select(pr->max_fd + 1, &(pr->readfds), NULL, NULL, &tv)) {
             case 0:
                 printf("Logger(%d): Timeout\n", getpid());
                 break;
             default:
-                if (pr->mq != NULL && FD_ISSET(*(pr->mq), &(pr->readfds))) {
+                if (pr->lg != -1 && FD_ISSET(pr->lg, &(pr->readfds))) {
                     char msg[BUFFER_SIZE];
                     memset(msg, 0x00, sizeof(msg));
-                    if (mq_receive(*(pr->mq), msg, BUFFER_SIZE, NULL) >= 0) {
+                    if (mq_receive(pr->lg, msg, BUFFER_SIZE, NULL) >= 0) {
                         printf("Logger(%d): received message <%s>\n", getpid(), msg);
-                        save_to_file(msg);
-                        if (strcmp(msg, "#") == 0) {
-                            pr->worked = false;
-                            continue;
-                        }
+                        LOG(msg);
                     } else {
                         printf("Logger(%d): None\n", getpid());
                     }
@@ -60,8 +36,11 @@ void run_logger(struct process_t* pr)
     }
 }
 
-void body_logger(int* fd, pid_t pid)
+void body_logger(int* fd, int pid)
 {
+    char msg[BUFFER_SIZE];
+    sprintf(msg, "new log session(%d)", getpid());
+    LOG(msg);
     struct process_t* pr = init_process(pid, getpid(), fd);
     run_logger(pr);
     free_process(pr);

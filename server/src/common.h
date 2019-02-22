@@ -66,6 +66,9 @@ struct cs_node_t {
 ////////////////////////////////////////////////////////////////////////////////////////////////////
 // FUNCTIONS
 
+// save message to file in root folder
+int save_to_file(char* fname, char* msg, bool info);
+
 void get_address(struct sockaddr_in* addr, socklen_t* addrlen);
 char* parse_mail(char* bf);
 int save_message(struct msg_t* msg);
