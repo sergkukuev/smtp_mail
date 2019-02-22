@@ -75,7 +75,7 @@ int create_listen_socket(struct addrinfo* inst)
 		return ERR_SOCKET;
 
 	int opt = 1;
-	if (setsockopt(s_fd, SOL_SOCKET, /*SO_REUSEPORT |*/ SO_REUSEADDR, &opt, sizeof(opt)) == -1)
+	if (setsockopt(s_fd, SOL_SOCKET, SO_REUSEPORT | SO_REUSEADDR, &opt, sizeof(opt)) == -1)
 		return ERR_SOCKOPT;
 
 	// get flags
