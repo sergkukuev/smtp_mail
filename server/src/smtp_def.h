@@ -1,5 +1,5 @@
-#ifndef __DEF_SMTP_H__
-#define __DEF_SMTP_H__
+#ifndef __SMTP_DEF_H__
+#define __SMTP_DEF_H__
 
 // smtp keys code
 #define KEY_FAILED -1
@@ -40,4 +40,4 @@
 #define RSMTP_501 "501 invalid argument(s) \r\n"
 #define RSMTP_503 "503 Wrong command sequence \r\n"
 
-#endif // !__DEF_SMPT_H__
+#endif // !__SMTP_DEF_H__
