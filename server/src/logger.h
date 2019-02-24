@@ -5,6 +5,6 @@
 
 // create logger
 // returns pid
-int create_logger();
+pid_t create_logger();
 
 #endif 
