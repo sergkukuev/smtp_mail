@@ -84,7 +84,7 @@ int create_listen_socket(struct addrinfo* inst)
 		return ERR_FCNTL;
 
 	//set non block flag
-	if (fcntl(s_fd, F_SETFL, flags | O_NONBLOCK))
+	if (fcntl(s_fd, F_SETFL, flags | O_NONBLOCK) == -1)
 		return ERR_FCNTL;
 
 	if (bind(s_fd, inst->ai_addr, inst->ai_addrlen) == -1)
@@ -195,14 +195,20 @@ struct cs_data_t* accept_client_socket(int fd)
 	socklen_t addrlen;
 	get_address(&addr, &addrlen);
 	int new_fd = accept(fd, (struct sockaddr*) &addr, &addrlen);
-	if (new_fd == -1)
+	if (new_fd == -1) {
 		parse_error(ERR_ACCEPT);
+		return NULL;
+	}
 	// get flags
 	int flags = fcntl(fd, F_GETFL, 0); 
-	if (flags == -1)
+	if (flags == -1) {
 		parse_error(ERR_FCNTL);
+		return NULL;
+	}
 	// set nonblock flag
-	if (fcntl(fd, F_SETFL, flags | O_NONBLOCK) == -1);
+	if (fcntl(fd, F_SETFL, flags | O_NONBLOCK) == -1); {
 		parse_error(ERR_FCNTL);
-	return (new_fd >= 0) ? bind_client_data(new_fd, SOCKET_STATE_INIT) : NULL;
+		return NULL;
+	}
+	return bind_client_data(new_fd, SOCKET_STATE_START);
 }
