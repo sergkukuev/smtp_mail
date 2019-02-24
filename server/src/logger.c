@@ -15,38 +15,49 @@ void run_logger(struct process_t* pr)
 		tv.tv_usec = 0;
 
 		FD_ZERO(&(pr->readfds));
-		if (pr->lg != -1)   FD_SET(pr->lg, &(pr->readfds));
-		switch(select(pr->max_fd + 1, &(pr->readfds), NULL, NULL, &tv)) {
+		if (pr->fd.logger != -1)   FD_SET(pr->fd.logger, &(pr->readfds));
+		switch(select(pr->fd.max + 1, &(pr->readfds), NULL, NULL, &tv)) {
             case 0:
                 printf("Logger(%d): Timeout\n", getpid());
                 break;
             default:
-                if (pr->lg != -1 && FD_ISSET(pr->lg, &(pr->readfds))) {
+                if (pr->fd.logger != -1 && FD_ISSET(pr->fd.logger, &(pr->readfds))) {
                     char msg[BUFFER_SIZE];
-                    memset(msg, 0x00, sizeof(msg));
-                    if (mq_receive(pr->lg, msg, BUFFER_SIZE, NULL) >= 0) {
+                    memset(msg, 0x00, sizeof(msg)); // clear buffer
+                    if (mq_receive(pr->fd.logger, msg, BUFFER_SIZE, NULL) >= 0) {
                         printf("Logger(%d): received message <%s>\n", getpid(), msg);
                         LOG(msg);
-                    } else {
-                        printf("Logger(%d): None\n", getpid());
                     }
+                    /* else {
+                        printf("Logger(%d): None\n", getpid());
+                    } */
                 }
             break;
         }
     }
 }
 
-void body_logger(int* fd, int pid)
+void body_logger(int* fd, pid_t* pid)
 {
-    char msg[BUFFER_SIZE];
-    sprintf(msg, "new log session(%d)", getpid());
-    LOG(msg);
-    struct process_t* pr = init_process(pid, getpid(), fd);
-    run_logger(pr);
-    free_process(pr);
+    *pid = getpid();
+    struct process_t* pr = init_process(fd, *pid);
+    if (pr != NULL) {
+        char msg[BUFFER_SIZE];
+        sprintf(msg, "new log session(%d)", *pid);
+        LOG(msg);
+        // run
+        printf("Logger(%d): started work\n", *pid);
+        run_logger(pr);
+        free_process(pr);
+    } else 
+        printf("Logger(%d): failed init\n", *pid);
+
+    printf("Logger(%d): process killed\n", *pid);
+    kill(getpid(), SIGTERM);
 }
 
 pid_t create_logger()
 {
-    return create_process(NULL, getpid(), body_logger);
+    pid_t lg = -1;
+    return create_process(NULL, &lg, body_logger);
 }

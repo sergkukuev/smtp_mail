@@ -19,8 +19,8 @@ int init_server(pid_t* pr, pid_t* lg)
     if (*lg == -1)
         return SERVER_FAILED;
 
-    int n = 1;
-    pr = create_processes(sfd, *lg, &n);
+    int n = 2;
+    pr = create_processes(sfd, &n, *lg);
     if (*pr == -1)
         return SERVER_FAILED;
     return SERVER_SUCCESS;
@@ -31,7 +31,7 @@ int run_server(pid_t pr, pid_t lg)
     // period send info we are alive 
     char bf[100];
     sprintf(bf, "/process%d", lg);
-    mqd_t mq = mq_open(bf, O_WRONLY);   // bf - name of queue
+    mqd_t mq = mq_open(bf, O_CREAT | O_WRONLY); // bf - log queue
     while(1) {
         sprintf(bf, "%s", "server is alive");
         mq_log(mq, bf);

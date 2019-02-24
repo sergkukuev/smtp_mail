@@ -5,14 +5,15 @@
 
 // struct of process data
 struct process_t {
-    int pid;
+    pid_t pid;
+    pid_t lgpid;
     bool worked;
-    int l_fd;       // listen fd
-    int max_fd;     // used select
 
-    // uses as fd
-    int* mq;  // used only logger
-    int lg;
+    struct fd_t {
+        int listen;
+        int logger;
+        int max;
+    } fd;
 
     // sets
     fd_set writefds;
@@ -24,15 +25,15 @@ struct process_t {
 
 // create and run process
 // returns pid
-int create_process(int* listen_fd, int log_pid, void (*body)(int*, int));
+pid_t create_process(int* listen_fd, pid_t* log_pid, void (*body)(int*, pid_t*));
 
 // create and run processes
 // returns pids array
-int* create_processes(int s_fd, int log_pid, int* nproc);
+pid_t* create_processes(int s_fd, int* nproc, pid_t log_pid);
 
 // process initialization
 // return structure
-struct process_t* init_process(int pid, int log_pid, int* fd);
+struct process_t* init_process(int* fd, pid_t log_pid);
 
 // process free
 void free_process(struct process_t* proc);
