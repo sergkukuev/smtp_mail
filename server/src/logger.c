@@ -25,10 +25,12 @@ void run_logger(struct process_t* pr)
                     char msg[BUFFER_SIZE];
                     memset(msg, 0x00, sizeof(msg)); // clear buffer
                     if (mq_receive(pr->fd.logger, msg, BUFFER_SIZE, NULL) >= 0) {
-                        if ((strcmp(msg, "#") != 0) || (strcmp(msg, "$") != 0)) {   // ignore command
-                            printf("Logger(%d): received message <%s>\n", getpid(), msg);
+                        if ((strcmp(msg, "#") != 0) && (strcmp(msg, "$") != 0)) {   // ignore command
+                            printf("Logger(%d): received message from %s\n", getpid(), msg);
                             LOG(msg);
-                        } else if (strcmp(msg, "$") == 0) {
+                        }
+                        if (strcmp(msg, "$") == 0) {
+                            printf("Logger(%d): accept command on close\n", getpid());
                             LOG("close logger");
                             pr->worked = false;
                         }

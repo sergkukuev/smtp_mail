@@ -50,7 +50,7 @@ bool is_exit(int fd, fd_set* readfds)
         memset(msg, 0x00, sizeof(msg)); // clear buffer
         if (mq_receive(fd, msg, BUFFER_SIZE, NULL) >= 0) {
             if (strcmp(msg, "#") == 0) {
-                printf("Worker(%d): received command <%s>\n", getpid(), msg);
+                printf("Worker(%d): accept command on close\n", getpid());
                 mq_log(fd, "close worker");
                 result = true;
             } else 

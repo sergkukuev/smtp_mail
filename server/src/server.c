@@ -92,7 +92,7 @@ int main(int argc, char** argv)
         // main loop
         case NO_FAILED: {
             signal(SIGINT, graceful_exit);
-            while(1);
+            while(1) sleep(5);
             break;
         }
         case FAILED_PROCESSES: {
