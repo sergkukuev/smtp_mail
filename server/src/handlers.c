@@ -22,14 +22,10 @@ int HELO_handle(struct cs_data_t* cs, char* msg, bool ehlo)
 {
     int result = DATA_FAILED;
     char bf[BUFFER_SIZE];
-    if (!ehlo) 
-        sprintf(bf, "%sHello %s \r\n", RSMTP_250_TEXT, msg);
-    else
+    (!ehlo) ? sprintf(bf, "%sHello %s \r\n", RSMTP_250_TEXT, msg) :
         sprintf(bf, "%sHello %s\r\n%sPIPELINING\r\n%sHELP\r\n", RSMTP_250_TEXT, msg, RSMTP_250_TEXT, RSMTP_250_TEXT);
-    struct sockaddr_in addr;
-    socklen_t addrlen;
-    get_address(&addr, &addrlen);
-    getpeername(cs->fd, (struct sockaddr*) &addr, &addrlen); 
+    socklen_t addrlen = sizeof(cs->addr);
+    getpeername(cs->fd, (struct sockaddr*) &cs->addr, &addrlen); 
     result = send_data(cs->fd, bf, strlen(bf), 0);
     if (result >= 0 && cs->state == SOCKET_STATE_INIT)    // change socket state
         cs->state = SOCKET_STATE_WAIT;
@@ -46,6 +42,7 @@ int MAIL_handle(struct cs_data_t* cs, char* msg)
     int result = DATA_FAILED;
     switch (cs->state) {
     case SOCKET_STATE_WAIT: {
+        if (cs->msg == NULL)    init_message(&cs->msg); // message initialization
         char* from = cs->msg->from = parse_mail(msg);
         char bf[BUFFER_SIZE] = RSMTP_250;
         if (from == NULL)   sprintf(bf, "%s", RSMTP_450);
@@ -130,17 +127,7 @@ int RSET_handle(struct cs_data_t* cs, char* msg)
         result = send_data(cs->fd, bf, strlen(bf), 0);
         if (result >= 0) {
             cs->state = SOCKET_STATE_WAIT;
-            // full clean
-            if (cs->msg->from != NULL)
-                free(cs->msg->from);
-            cs->msg->from = NULL;
-            if (cs->msg->body != NULL)
-                free(cs->msg->body);
-            cs->msg->body = NULL;
-            for (int i = 0; i < cs->msg->rnum; i++) {
-                free(cs->msg->to[i]);
-                cs->msg->to[i] = NULL;
-            }
+            free_message(&cs->msg);     // free message structure
         }       
     //} else {
     //    result = send_data(cs->fd, RSMTP_501, strlen(RSMTP_501), 0);

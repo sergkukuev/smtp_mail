@@ -38,6 +38,43 @@ int mq_log(int lg, char* msg)
     return res;
 }
 
+void init_message(struct msg_t** msg)
+{
+    if (*msg != NULL)
+        free_message(msg);
+
+    struct msg_t* tmp = malloc(sizeof(*tmp));
+    int mailsz = 250;
+    tmp->body = malloc(1);
+    tmp->body[0] = '\0';
+    tmp->from = malloc(mailsz * sizeof(char));
+    tmp->to = malloc(MAX_RECIPIENTS * sizeof(char*));
+    for (int i = 0; i < MAX_RECIPIENTS; i++)
+        tmp->to[i] = malloc(mailsz * sizeof(char));
+    tmp->rnum = 0;
+    tmp->blen = 0;
+    *msg = tmp;
+}
+
+void free_message(struct msg_t** msg)
+{
+    if (*msg == NULL)
+        return;
+
+    struct msg_t* tmp = *msg;
+    for (int i = 0; i < MAX_RECIPIENTS; i++)
+        if (tmp->to[i] != NULL)
+            free(tmp->to[i]);
+    if (tmp->from != NULL)
+        free(tmp->from);
+    if (tmp->body != NULL)
+        free(tmp->body);
+    if (tmp->to != NULL)
+        free(tmp->to);
+    free(*msg);
+    *msg = NULL;
+}
+
 char* select_from_message(char* message, char* buffer, char* start, char* end) {
     if ( start && end ) {
         start++;
@@ -47,15 +84,6 @@ char* select_from_message(char* message, char* buffer, char* start, char* end) {
         buffer[length] = '\0';
     }
     return buffer;
-}
-
-void get_address(struct sockaddr_in* addr, socklen_t* addrlen)
-{
-    memset(addr, 0, sizeof(*addr));
-    addr->sin_family = AF_UNSPEC;
-    addr->sin_addr.s_addr = INADDR_ANY;
-    addr->sin_port = htons(atoi(SERVER_PORT));
-    *addrlen = sizeof(addr);
 }
 
 char* parse_mail(char* message)

@@ -33,6 +33,7 @@
 #define SOCKET_STATE_START 6
 
 // maildir 
+#define MAX_RECIPIENTS 10
 #define PARSE_FAILED -1
 #define MAILDIR "../maildir/"
 #define MAILSTART '<'
@@ -73,7 +74,10 @@ bool save_to_file(char* fname, char* msg, bool info);
 // send message to log message queue
 int mq_log(int lg, char* msg);
 
-void get_address(struct sockaddr_in* addr, socklen_t* addrlen);
+// message function
+void init_message(struct msg_t** msg);
+void free_message(struct msg_t** msg);
+
 char* parse_mail(char* bf);
 int save_message(struct msg_t* msg);
 
