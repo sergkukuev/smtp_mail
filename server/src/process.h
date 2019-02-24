@@ -12,6 +12,7 @@ struct process_t {
     struct fd_t {
         int listen;
         int logger;
+        int exit;
         int max;
     } fd;
 

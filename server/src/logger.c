@@ -15,12 +15,17 @@ void run_logger(struct process_t* pr)
 		tv.tv_usec = 0;
 
 		FD_ZERO(&(pr->readfds));
-		if (pr->fd.logger != -1)   FD_SET(pr->fd.logger, &(pr->readfds));
+		FD_SET(pr->fd.logger, &(pr->readfds));
+        FD_SET(pr->fd.exit, &(pr->readfds));
 		switch(select(pr->fd.max + 1, &(pr->readfds), NULL, NULL, &tv)) {
             case 0:
                 printf("Logger(%d): Timeout\n", getpid());
                 break;
             default:
+                if (FD_ISSET(pr->fd.exit, &pr->readfds)) {
+                    pr->worked = false;
+                    return;
+                }
                 if (pr->fd.logger != -1 && FD_ISSET(pr->fd.logger, &(pr->readfds))) {
                     char msg[BUFFER_SIZE];
                     memset(msg, 0x00, sizeof(msg)); // clear buffer
