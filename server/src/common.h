@@ -19,7 +19,7 @@
 #define SERVER_DOMAIN "myserver.ru"
 #define BUFFER_SIZE 1024
 #define BACKLOG_SIZE 3
-#define SELECT_TIMEOUT 60
+#define SELECT_TIMEOUT 240
 
 // socket state
 #define SOCKET_NOSTATE -1
@@ -50,6 +50,7 @@ struct msg_t {
 // data of client socket
 struct cs_data_t {
     int fd;
+    struct sockaddr addr;
     int state;
     char* buf;
     bool flw;
