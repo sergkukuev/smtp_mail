@@ -5,14 +5,14 @@
 #include <mqueue.h>
 #include <time.h>
 
-int save_to_file(char* fname, char* txt, bool info)
+bool save_to_file(char* fname, char* txt, bool info)
 {
     FILE* lf = fopen(fname, "a");
     char msg[BUFFER_SIZE];
     if (!lf) {
         sprintf(msg, "error opening log file(%s)", fname);
         perror(msg);
-        return -1;
+        return false;
     }
     // variable add '\n' or not
     (txt[strlen(txt) - 1] == '\n') ? sprintf(msg, "%s", txt) : sprintf(msg, "%s\n", txt); 
@@ -26,12 +26,13 @@ int save_to_file(char* fname, char* txt, bool info)
         fprintf(lf, "%s", msg);
     fflush(lf);
     fclose(lf);
-    return 0;
+    return true;
 }
 
 int mq_log(int lg, char* msg)
 {
-    int res = mq_send(lg, msg, strlen(msg), 0); 
+    sprintf(msg, "(%d) %s", getpid(), msg);
+    int res = mq_send(lg, msg, strlen(msg), 0);
     if (res == -1)  perror(msg);
     return res;
 }

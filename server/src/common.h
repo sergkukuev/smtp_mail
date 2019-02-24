@@ -67,11 +67,13 @@ struct cs_node_t {
 // FUNCTIONS
 
 // save message to file in root folder
-int save_to_file(char* fname, char* msg, bool info);
+bool save_to_file(char* fname, char* msg, bool info);
+
+// send message to log message queue
+int mq_log(int lg, char* msg);
 
 void get_address(struct sockaddr_in* addr, socklen_t* addrlen);
 char* parse_mail(char* bf);
 int save_message(struct msg_t* msg);
-int mq_log(int lg, char* msg);
 
 #endif // !__COMMON_H__
