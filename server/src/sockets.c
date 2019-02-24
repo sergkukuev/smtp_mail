@@ -53,7 +53,7 @@ void parse_error(int err)
 			perror("undefined error");
 			break;
 	}
-	printf("Server(%d): socket failed (%d)", getpid(), err);
+	//printf("Worker(%d): socket failed (%d)\n", getpid(), err);
 }
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -137,15 +137,17 @@ int init_listen_socket()
 
 // initialize client socket
 // returns data of socket
-struct cs_data_t* bind_client_data(int fd, int state)
+struct cs_data_t* bind_client_data(int fd, struct sockaddr addr, int state)
 {
 	struct cs_data_t* data = malloc(sizeof(*data));
 	data->fd = fd;
+	data->addr = addr;
+	data->flw = true;
 	data->state = state;
 	data->msg = NULL;
 	data->buf = malloc(sizeof(*(data->buf)) * BUFFER_SIZE);
 	data->offset = 0;
-	printf("Server(%d): bind data to socket (fd = %d)\n", getpid(), fd);
+	//printf("Worker(%d): bind data to socket (fd = %d)\n", getpid(), fd);
 	return data;
 }
 
@@ -193,12 +195,12 @@ void close_client_sockets_by_state(struct cs_node_t** head, int state)
 struct cs_data_t* accept_client_socket(int fd)
 {
 	// accept connection
-	struct sockaddr_in addr;
-	socklen_t addrlen;
-	get_address(&addr, &addrlen);
-	int new_fd = accept(fd, (struct sockaddr*) &addr, &addrlen);
-	if (new_fd == -1) {
-		parse_error(ERR_ACCEPT);
+	struct sockaddr new_addr;
+	socklen_t new_len = sizeof(new_addr);
+	int new_fd = accept(fd, &new_addr, &new_len);
+	if (new_fd < 0) {
+		if (errno != EWOULDBLOCK)
+			parse_error(ERR_ACCEPT);
 		return NULL;
 	}
 	// get flags
@@ -212,5 +214,5 @@ struct cs_data_t* accept_client_socket(int fd)
 		parse_error(ERR_FCNTL);
 		return NULL;
 	}
-	return bind_client_data(new_fd, SOCKET_STATE_START);
+	return bind_client_data(new_fd, new_addr, SOCKET_STATE_START);
 }
