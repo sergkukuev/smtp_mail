@@ -31,6 +31,8 @@ int parse_key_word(char* key)
 int key_switcher(struct cs_data_t* cs, char* msg, bool* quit, int lg) 
 {
     int err = 0;
+    int key = parse_key_word(cs->buf);
+    printf("Worker(%d): index of key command %d\n", getpid(), key);
     switch(parse_key_word(cs->buf)) {
         case KEY_HELO:
             err = HELO_handle(cs, msg + 5, false);
@@ -62,9 +64,6 @@ int key_switcher(struct cs_data_t* cs, char* msg, bool* quit, int lg)
             break;
         // undefined 
         default: {
-            char bf[BUFFER_SIZE];
-            sprintf(bf, "command undefined(socket:%d)", cs->fd);
-            mq_log(lg, bf);
             UNDEFINED_handle(cs);
         }
     }
@@ -85,7 +84,6 @@ void reply_handle(struct cs_data_t* cs, int lg)
         /* int res = */ (cs->state == SOCKET_STATE_DATA) ? TEXT_handle(cs, msg) : key_switcher(cs, msg, &bq, lg);
         free(msg);
         if (bq) break;  // quit session
-        // if (res == DATA_FAILED) ALLOWED_handle(cs);
         memmove(cs->buf, eol + 2, BUFFER_SIZE - (eol + 2 - cs->buf));
     }
     // set readfds flag
