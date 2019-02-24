@@ -161,11 +161,6 @@ bool is_buffer_filled(struct cs_data_t* cs, int bf_left)
 // main smtp handler (can parse all command)
 void main_handle(struct cs_data_t* cs, int lg)
 {
-    // log
-    char bf[BUFFER_SIZE];
-    sprintf(bf, "handle started for socket(%d)", cs->fd);
-    mq_log(lg, bf);
-
     if (send_greeting(cs))
         return;
     
