@@ -12,7 +12,6 @@ struct process_t {
     struct fd_t {
         int listen;
         int logger;
-        int exit;
         int max;
     } fd;
 
@@ -29,8 +28,8 @@ struct process_t {
 pid_t create_process(int* listen_fd, pid_t* log_pid, void (*body)(int*, pid_t*));
 
 // create and run processes
-// returns pids array
-pid_t* create_processes(int s_fd, int* nproc, pid_t log_pid);
+// returns numeric of creating processes
+int create_processes(int s_fd, pid_t* procs, int nproc, pid_t log_pid);
 
 // process initialization
 // return structure

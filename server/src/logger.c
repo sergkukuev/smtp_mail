@@ -16,22 +16,22 @@ void run_logger(struct process_t* pr)
 
 		FD_ZERO(&(pr->readfds));
 		FD_SET(pr->fd.logger, &(pr->readfds));
-        FD_SET(pr->fd.exit, &(pr->readfds));
 		switch(select(pr->fd.max + 1, &(pr->readfds), NULL, NULL, &tv)) {
             case 0:
                 printf("Logger(%d): Timeout\n", getpid());
                 break;
             default:
-                if (FD_ISSET(pr->fd.exit, &pr->readfds)) {
-                    pr->worked = false;
-                    return;
-                }
-                if (pr->fd.logger != -1 && FD_ISSET(pr->fd.logger, &(pr->readfds))) {
+                if (FD_ISSET(pr->fd.logger, &(pr->readfds))) {
                     char msg[BUFFER_SIZE];
                     memset(msg, 0x00, sizeof(msg)); // clear buffer
                     if (mq_receive(pr->fd.logger, msg, BUFFER_SIZE, NULL) >= 0) {
-                        printf("Logger(%d): received message <%s>\n", getpid(), msg);
-                        LOG(msg);
+                        if ((strcmp(msg, "#") != 0) || (strcmp(msg, "$") != 0)) {   // ignore command
+                            printf("Logger(%d): received message <%s>\n", getpid(), msg);
+                            LOG(msg);
+                        } else if (strcmp(msg, "$") == 0) {
+                            LOG("close logger");
+                            pr->worked = false;
+                        }
                     }
                     /* else {
                         printf("Logger(%d): None\n", getpid());

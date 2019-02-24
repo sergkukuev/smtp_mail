@@ -27,27 +27,42 @@ struct process_t* init_process(int* fd, pid_t log_pid)
         attr.mq_maxmsg = 10;
         attr.mq_msgsize = BUFFER_SIZE;
         proc->fd.logger = mq_open(lgname, O_CREAT | O_RDONLY | O_NONBLOCK, 0644, &attr);    // 0644: write, read, read   
-    } else {    // workersd
+    } else {    // workers
         //sleep(1);
-        proc->fd.logger = mq_open(lgname, /*O_CREAT |*/ O_WRONLY);
+        proc->fd.logger = mq_open(lgname, O_RDWR);  // for receive command and send msg to logger
     }
-    // exit message queue
-    memset(lgname, 0x00, sizeof(lgname)); // clear buffer
-    sprintf(lgname, "/exit%d", getppid());
-    proc->fd.exit = mq_open(lgname, O_RDONLY);
-    if (proc->fd.logger == -1 || proc->fd.exit == -1) {
+    if (proc->fd.logger == -1) {
         perror("mq_open() failed");
         free(proc);
         proc = NULL;
-    } else if (proc->fd.logger > proc->fd.max || proc->fd.exit > proc->fd.max) { // check fd message queue
-        proc->fd.max = (proc->fd.logger > proc->fd.exit) ? proc->fd.logger : proc->fd.exit;
+    } else if (proc->fd.logger > proc->fd.max) { // check fd message queue
+        proc->fd.max = proc->fd.logger;
         (proc->pid == log_pid) ? printf("Logger(%d): queue created\n", log_pid) : printf("Worker(%d): linked log queue\n", getpid());
     }
     return proc;
 }
 
+bool is_exit(int fd, fd_set* readfds) 
+{
+    bool result = false;
+    if (FD_ISSET(fd, readfds)) {
+        char msg[BUFFER_SIZE];
+        memset(msg, 0x00, sizeof(msg)); // clear buffer
+        if (mq_receive(fd, msg, BUFFER_SIZE, NULL) >= 0) {
+            if (strcmp(msg, "#") == 0) {
+                printf("Worker(%d): received command <%s>\n", getpid(), msg);
+                mq_log(fd, "close worker");
+                result = true;
+            } else 
+                printf("Worker(%d): received message <%s>\n", getpid(), msg);
+        }
+    }
+    return result;
+}
+
 bool check_listen_socket(int fd, struct cs_node_t** head, fd_set* readfds, int* max_fd)
 {
+    bool result = false;
     if (FD_ISSET(fd, readfds)) {
         struct cs_data_t* data = accept_client_socket(fd);
         if (data) {
@@ -56,13 +71,13 @@ bool check_listen_socket(int fd, struct cs_node_t** head, fd_set* readfds, int* 
             node->cs = data;
             node->next = *head;
             *head = node;
-            return true;
+            result = true;
         } else {
             char msg[BUFFER_SIZE];
             sprintf(msg, "Worker(%d): socket data not binded\n", getpid());
         }
     }
-    return false;
+    return result;
 }
 
 // parser select()
@@ -87,11 +102,8 @@ void parse_select(struct process_t* proc)
 			break;
 		// sockets ready - need checks
 		default:
-            // exit
-            if (FD_ISSET(proc->fd.exit, &proc->readfds)) {
-                proc->worked = false;
-                return;
-            }
+            if (!(proc->worked = !is_exit(proc->fd.logger, &(proc->readfds))))
+                return; // exit of worker
             check_listen_socket(proc->fd.listen, &proc->ws_list, &proc->readfds, &proc->fd.max);
             // handle sockets from ws_list
             for (struct cs_node_t* tmp = proc->ws_list; tmp != NULL; tmp = tmp->next) {
@@ -116,19 +128,19 @@ void run_process(struct process_t* proc)
         FD_ZERO(&(proc->readfds));
         FD_ZERO(&(proc->writefds));
         FD_SET(proc->fd.listen, &proc->readfds); // set listen socket
-        FD_SET(proc->fd.exit, &proc->readfds);   // exit 
+        FD_SET(proc->fd.logger, &proc->readfds); // set logger socket for exit mode 
 
         // delete all closed sockets
         close_client_sockets_by_state(&(proc->ws_list), SOCKET_STATE_CLOSED);
 
         // log
-        char bf[BUFFER_SIZE];
+        /*char bf[BUFFER_SIZE];
         memset(bf, 0x00, strlen(bf));
         sprintf(bf, "writters = %p is_null = %d", proc->ws_list, (proc->ws_list == NULL));
         mq_log(proc->fd.logger, bf);
         memset(bf, 0x00, strlen(bf));
         sprintf(bf, "readers = %p is_null = %d", proc->rs_list, (proc->rs_list == NULL));
-        mq_log(proc->fd.logger, bf);
+        mq_log(proc->fd.logger, bf);*/
 
         // sets all sockets in array
         for (struct cs_node_t* i = proc->rs_list; i != NULL; i = i->next)
@@ -152,8 +164,7 @@ void free_process(struct process_t* proc)
     // free message queue
     if (proc->fd.logger != -1)
         mq_close(proc->fd.logger);
-    if (proc->fd.exit != -1)
-        mq_close(proc->fd.exit);
+
     if (proc->lgpid == proc->pid) {
         char* lgname = malloc(sizeof(*lgname) * 20);
         sprintf(lgname, "/process%d", proc->lgpid);
@@ -207,10 +218,16 @@ pid_t create_process(int* listen_fd, pid_t* log_pid, void (*body)(int*, pid_t*))
 
 // create processes
 // returns pid array
-pid_t* create_processes(int fd, int* nproc, pid_t log_pid)
+int create_processes(int fd, pid_t* procs, int nproc, pid_t log_pid)
 {
-    int* pids = malloc(sizeof(*pids) * *nproc);
-    for (int i = 0; i < *nproc; i++)
-        *(pids + i) = create_process(&fd, &log_pid, body_process);
-    return pids;
+    int num = 0;
+    for (int i = 0; i < nproc; i++) {
+        pid_t tmp = create_process(&fd, &log_pid, body_process);
+        // save in array
+        if (tmp != -1) {
+            num++;
+            procs[i] = tmp;
+        }
+    }
+    return num;
 }
