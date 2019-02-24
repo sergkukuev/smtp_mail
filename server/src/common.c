@@ -8,11 +8,12 @@
 int save_to_file(char* fname, char* txt, bool info)
 {
     FILE* lf = fopen(fname, "a");
+    char msg[BUFFER_SIZE];
     if (!lf) {
-        perror("error opening log file(server_log)");
+        sprintf(msg, "error opening log file(%s)", fname);
+        perror(msg);
         return -1;
     }
-    char msg[BUFFER_SIZE];
     // variable add '\n' or not
     (txt[strlen(txt) - 1] == '\n') ? sprintf(msg, "%s", txt) : sprintf(msg, "%s\n", txt); 
     // write with timetag
