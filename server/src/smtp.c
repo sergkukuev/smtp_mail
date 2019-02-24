@@ -31,49 +31,42 @@ int parse_key_word(char* key)
 int key_switcher(struct cs_data_t* cs, char* msg, bool* quit, int lg) 
 {
     int err = 0;
-    bool undef = false;
     switch(parse_key_word(cs->buf)) {
-    case KEY_HELO:
-        err = HELO_handle(cs, msg + 5, false);
-        break;
-    case KEY_EHLO:
-        err = EHLO_handle(cs, msg + 5);
-        break;
-    case KEY_MAIL:
-        err = MAIL_handle(cs, msg + 5);
-        break;
-    case KEY_RCPT:
-        err = RCPT_handle(cs, msg + 5);
-        break;
-    case KEY_DATA:
-        err = DATA_handle(cs, msg + 5);
-        break;
-    case KEY_NOOP:
-        err = NOOP_handle(cs);
-        break;
-    case KEY_RSET:
-        err = RSET_handle(cs, msg + 5);
-        break;
-    case KEY_VRFY:
-        err = VRFY_handle(cs, msg + 5);
-        break;
-    case KEY_QUIT:  // exit session
-        err = QUIT_handle(cs, msg + 5);
-        *quit = true;
-        break;
-    // undefined 
-    default: {
-        char bf[BUFFER_SIZE];
-        sprintf(bf, "command undefined(socket:%d)", cs->fd);
-        mq_log(lg, bf);
-        undef = true;
-        UNDEFINED_handle(cs);
-    }
-    }
-    if (!undef) {
-        char bf[BUFFER_SIZE];
-        sprintf(bf, "good parse command(socket:%d)", cs->fd);
-        mq_log(lg, bf);
+        case KEY_HELO:
+            err = HELO_handle(cs, msg + 5, false);
+            break;
+        case KEY_EHLO:
+            err = EHLO_handle(cs, msg + 5);
+            break;
+        case KEY_MAIL:
+            err = MAIL_handle(cs, msg + 5);
+            break;
+        case KEY_RCPT:
+            err = RCPT_handle(cs, msg + 5);
+            break;
+        case KEY_DATA:
+            err = DATA_handle(cs, msg + 5);
+            break;
+        case KEY_NOOP:
+            err = NOOP_handle(cs);
+            break;
+        case KEY_RSET:
+            err = RSET_handle(cs, msg + 5);
+            break;
+        case KEY_VRFY:
+            err = VRFY_handle(cs, msg + 5);
+            break;
+        case KEY_QUIT:  // exit session
+            err = QUIT_handle(cs, msg + 5);
+            *quit = true;
+            break;
+        // undefined 
+        default: {
+            char bf[BUFFER_SIZE];
+            sprintf(bf, "command undefined(socket:%d)", cs->fd);
+            mq_log(lg, bf);
+            UNDEFINED_handle(cs);
+        }
     }
     return err;
 }
@@ -86,7 +79,7 @@ void reply_handle(struct cs_data_t* cs, int lg)
     while(strstr(cs->buf, "\r\n")) {
         char* eol = strstr(cs->buf, "\r\n");
         eol[0] = '\0';
-        printf("Server(%d): client(%d) send msg < %s >\n", getpid(), cs->fd, cs->buf);
+        printf("Worker(%d): client(%d) send msg <%s>\n", getpid(), cs->fd, cs->buf);
         char* msg = (char*) malloc(BUFFER_SIZE);
         strcpy(msg, cs->buf);
         /* int res = */ (cs->state == SOCKET_STATE_DATA) ? TEXT_handle(cs, msg) : key_switcher(cs, msg, &bq, lg);
