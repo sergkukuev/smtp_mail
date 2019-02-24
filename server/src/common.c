@@ -31,8 +31,9 @@ bool save_to_file(char* fname, char* txt, bool info)
 
 int mq_log(int lg, char* msg)
 {
-    sprintf(msg, "(%d) %s", getpid(), msg);
-    int res = mq_send(lg, msg, strlen(msg), 0);
+    char bf[BUFFER_SIZE];
+    sprintf(bf, "(%d) %s", getpid(), msg);
+    int res = mq_send(lg, bf, strlen(bf), 0);
     if (res == -1)  perror(msg);
     return res;
 }

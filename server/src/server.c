@@ -31,7 +31,7 @@ int run_server(pid_t pr, pid_t lg)
     // period send info we are alive 
     char bf[100];
     sprintf(bf, "/process%d", lg);
-    mqd_t mq = mq_open(bf, O_CREAT | O_WRONLY); // bf - log queue
+    mqd_t mq = mq_open(bf, O_WRONLY); // bf - log queue
     while(1) {
         sprintf(bf, "%s", "server is alive");
         mq_log(mq, bf);
