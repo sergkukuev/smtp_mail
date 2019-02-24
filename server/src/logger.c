@@ -14,32 +14,33 @@ void run_logger(struct process_t* pr)
 		tv.tv_sec = SELECT_TIMEOUT;
 		tv.tv_usec = 0;
 
-		FD_ZERO(&(pr->readfds));
-		FD_SET(pr->fd.logger, &(pr->readfds));
-		switch(select(pr->fd.max + 1, &(pr->readfds), NULL, NULL, &tv)) {
+		FD_ZERO(pr->readfds);
+		FD_SET(pr->fd.logger, pr->readfds);
+        FD_SET(pr->fd.cmd, pr->readfds);
+		switch(select(pr->fd.max + 1, pr->readfds, NULL, NULL, &tv)) {
             case 0:
                 printf("Logger(%d): Timeout\n", getpid());
                 break;
-            default:
-                if (FD_ISSET(pr->fd.logger, &(pr->readfds))) {
-                    char msg[BUFFER_SIZE];
-                    memset(msg, 0x00, sizeof(msg)); // clear buffer
-                    if (mq_receive(pr->fd.logger, msg, BUFFER_SIZE, NULL) >= 0) {
-                        if ((strcmp(msg, "#") != 0) && (strcmp(msg, "$") != 0)) {   // ignore command
-                            printf("Logger(%d): received message from %s\n", getpid(), msg);
-                            LOG(msg);
-                        }
+            default: {
+                char msg[BUFFER_SIZE];
+                memset(msg, 0x0, sizeof(msg));
+                if (FD_ISSET(pr->fd.cmd, pr->readfds)) {
+                    if (mq_receive(pr->fd.cmd, msg, BUFFER_SIZE, NULL) >= 0) {
                         if (strcmp(msg, "$") == 0) {
                             printf("Logger(%d): accept command on close\n", getpid());
                             LOG("close logger");
                             pr->worked = false;
                         }
                     }
-                    /* else {
-                        printf("Logger(%d): None\n", getpid());
-                    } */
                 }
-            break;
+                if (FD_ISSET(pr->fd.logger, pr->readfds)) {
+                    if (mq_receive(pr->fd.logger, msg, BUFFER_SIZE, NULL) >= 0) {
+                            printf("Logger(%d): received message from %s\n", getpid(), msg);
+                            LOG(msg);
+                    }
+                }
+                break;
+            }
         }
     }
 }

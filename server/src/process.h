@@ -12,15 +12,15 @@ struct process_t {
     struct fd_t {
         int listen;
         int logger;
+        int cmd;    // command message queue
         int max;
     } fd;
 
     // sets
-    fd_set writefds;
-    fd_set readfds;
-    // lists of clients sockets
-    struct cs_node_t* ws_list;
-    struct cs_node_t* rs_list;
+    fd_set* writefds;
+    fd_set* readfds;
+
+    struct cs_node_t* s_list; // lists of clients sockets
 };
 
 // create and run process

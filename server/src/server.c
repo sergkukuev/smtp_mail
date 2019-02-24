@@ -29,7 +29,7 @@ void graceful_exit(int sig)
     printf("\nServer(%d): terminating...\n", getpid());
     // connect to logger message queue
     char name[BUFFER_SIZE];
-    sprintf(name, "/process%d", server.logger);
+    sprintf(name, "/exit%d", server.logger);
     int lg = mq_open(name, O_WRONLY);
     if (lg == -1) {
         perror("graceful_exit() failed");
@@ -51,7 +51,7 @@ void graceful_exit(int sig)
     int status = 0;
     while (wait(&status) > 0) sleep(1);
     char* lgname = malloc(sizeof(*lgname) * 20);
-    sprintf(lgname, "/process%d", lg);
+    sprintf(lgname, "/exit%d", lg);
     mq_close(lg);
     mq_unlink(lgname);
     free(server.workers);
@@ -101,6 +101,7 @@ int main(int argc, char** argv)
             while(1) sleep(5);
             break;
         }
+        // TODO: do graceful failed exit 
         case FAILED_PROCESSES: {
             break;
         }
