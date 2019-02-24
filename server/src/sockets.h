@@ -8,7 +8,7 @@
 int init_listen_socket();
 
 // close listen socket
-void close_listen_socket(int fd);
+int close_listen_socket(int fd);
 
 // bind data to a socket
 // returns data of socket

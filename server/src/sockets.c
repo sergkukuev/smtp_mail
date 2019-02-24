@@ -96,10 +96,12 @@ int create_listen_socket(struct addrinfo* inst)
 }
 
 // close connection
-void close_listen_socket(int fd)
+int close_listen_socket(int fd)
 {
-	if (close(fd) != 0)
+	int result = close(fd);
+	if (result != 0)
 		parse_error(ERR_CLOSE);
+	return result;
 }
 
 // create listener socket by getaddrinfo()
@@ -206,7 +208,7 @@ struct cs_data_t* accept_client_socket(int fd)
 		return NULL;
 	}
 	// set nonblock flag
-	if (fcntl(fd, F_SETFL, flags | O_NONBLOCK) == -1); {
+	if (fcntl(fd, F_SETFL, flags | O_NONBLOCK) == -1) {
 		parse_error(ERR_FCNTL);
 		return NULL;
 	}

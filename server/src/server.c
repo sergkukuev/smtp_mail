@@ -56,7 +56,7 @@ void graceful_exit(int sig)
     mq_unlink(lgname);
     free(server.workers);
     // free listen server
-    if (close(server.lstfd) == -1) {
+    if (close_listen_socket(server.lstfd) == -1) {
         perror("graceful_exit() failed");
         exit(EXIT_FAILURE);
     }
