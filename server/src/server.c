@@ -26,7 +26,7 @@ static struct server_t server;
 void graceful_exit(int sig)
 {
     signal(sig, SIG_IGN);
-    printf("\nServer(%d): start gracefull close\n", getpid());
+    printf("\nServer(%d): terminating...\n", getpid());
     // connect to logger message queue
     char name[BUFFER_SIZE];
     sprintf(name, "/process%d", server.logger);
@@ -55,6 +55,12 @@ void graceful_exit(int sig)
     mq_close(lg);
     mq_unlink(lgname);
     free(server.workers);
+    // free listen server
+    if (close(server.lstfd) == -1) {
+        perror("graceful_exit() failed");
+        exit(EXIT_FAILURE);
+    }
+    printf("Server(%d): done\n", getpid());
     exit(EXIT_SUCCESS);
 }
 
