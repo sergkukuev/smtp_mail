@@ -32,7 +32,7 @@ struct process_t* init_process(int* fd, pid_t log_pid)
         sprintf(lgname, "/exit%d", log_pid);
         proc->fd.cmd = mq_open(lgname, O_CREAT | O_RDONLY | O_NONBLOCK, 0644, &attr);
     } else {    // workers
-        //sleep(1);
+        sleep(1);
         proc->fd.logger = mq_open(lgname, O_WRONLY);  // for send message to logger
         memset(lgname, 0x0, sizeof(lgname));
         sprintf(lgname, "/exit%d", log_pid);
