@@ -3,6 +3,11 @@
 
 #include "common.h"
 
+// defines reply and receive
+#define DATA_FAILED -2
+#define DATA_BLOCK -1
+#define DATA_EMPTY 0
+
 // initialize listen socket
 // returns fd
 int init_listen_socket();
@@ -25,5 +30,11 @@ int close_client_sockets_by_state(struct cs_node_t** head_cs, int state);
 // accept client socket
 // return client data
 struct cs_data_t* accept_client_socket(int fd);
+
+// sending data
+int send_data(int fd, char* bf, size_t bfsz, int flags);
+
+// receive data
+int recv_data(int fd, char* bf, size_t bfsz, int flags);
 
 #endif

@@ -1,4 +1,5 @@
 #include "sockets.h"
+#include "smtp_def.h"
 
 #include <stdio.h>
 #include <stdlib.h>
@@ -8,6 +9,25 @@
 #include <arpa/inet.h>
 #include <netdb.h>
 #include <fcntl.h>
+
+////////////////////////////////////////////////////////////////////////////////////////////////////
+// SEND & RECEIVE
+
+// sending data
+int send_data(int fd, char* bf, size_t bfsz, int flags)
+{
+    if (fd <= 0)    return DATA_FAILED;
+    int nbytes = send(fd, bf, bfsz, flags);
+    return nbytes < 0 ? ((errno == EWOULDBLOCK) ? DATA_BLOCK : DATA_FAILED) : nbytes;
+}
+
+// recv data
+int recv_data(int fd, char* bf, size_t bfsz, int flags)
+{
+    if (fd <= 0)    return DATA_FAILED;
+    int nbytes = recv(fd, bf, bfsz, flags);
+    return nbytes < 0 ? ((errno == EWOULDBLOCK) ? DATA_BLOCK : DATA_FAILED) : nbytes;
+}
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////
 // ERRORS
@@ -186,6 +206,7 @@ struct cs_data_t* bind_client_data(int fd, struct sockaddr addr, int state)
 	data->fd = fd;
 	data->addr = addr;
 	data->flw = true;
+	data->hmode = true;
 	data->state = state;
 	init_message_struct(&(data->msg));
 	data->buf = malloc(sizeof(*(data->buf)) * BUFFER_SIZE);
@@ -197,6 +218,8 @@ struct cs_data_t* bind_client_data(int fd, struct sockaddr addr, int state)
 // free data of client
 void free_client_data(struct cs_data_t** data)
 {
+	if (close((*data)->fd) != 0)	// close socket
+		parse_error(ERR_CLOSE);
 	free_message_struct(&(*data)->msg);
 	free(*data);
 	*data = NULL;
@@ -206,19 +229,44 @@ void free_client_data(struct cs_data_t** data)
 // state = SOCKET_NOSTATE - close all sockets in list
 int close_client_sockets_by_state(struct cs_node_t** head, int state)
 {
+	struct cs_node_t* tmp = *head;
 	struct cs_node_t* prev = NULL;
 	int count = 0;
-	for (struct cs_node_t* tmp = *head; tmp != NULL; tmp = tmp->next) {
-		if (tmp->cs->state == state || state == SOCKET_NOSTATE) {
-			if (prev == NULL)	// move head
+	while (tmp != NULL) {
+		// socket already deleted, empty struct
+		if (tmp->cs == NULL) {
+			if (prev == NULL) {	// move head
 				*head = tmp->next;
-			prev->next = tmp->next;
-			if (close(tmp->cs->fd) != 0)	// close socket
-				parse_error(ERR_CLOSE);
-			free_client_data(&tmp->cs);
-			tmp = prev->next;
+				free(tmp);
+				tmp = *head;
+			} else {
+				prev->next = tmp->next;
+				free(tmp);
+				tmp = prev->next;
+			}
+			continue;
+		}
+		// send receive about terminate
+		if (tmp->cs->state != SOCKET_STATE_CLOSED && state == SOCKET_NOSTATE)
+			send_data(tmp->cs->fd, REPLY_TERMINATE, strlen(REPLY_TERMINATE), 0);
+		// delete sockets
+		if (tmp->cs->state == state || state == SOCKET_NOSTATE) {
+			if (prev == NULL) {	// move head
+				*head = tmp->next;
+				free_client_data(&tmp->cs);
+				free(tmp);
+				tmp = *head;
+			} else {
+				prev->next = tmp->next;
+				free_client_data(&tmp->cs);
+				free(tmp);
+				tmp = prev->next;
+			}
+			count--;
+			continue;
 		}
 		count++;
+		tmp = tmp->next;
 	}
 	return count;
 }
