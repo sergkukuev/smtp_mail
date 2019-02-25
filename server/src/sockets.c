@@ -140,6 +140,44 @@ int init_listen_socket()
 ////////////////////////////////////////////////////////////////////////////////////////////////////
 // CLIENT SOCKET
 
+void free_message_struct(struct msg_t** msg)
+{
+	if ((*msg)->body != NULL) {
+		free((*msg)->body);
+		(*msg)->blen = 0;
+	}
+	if ((*msg)->from != NULL) 
+		free((*msg)->from);
+	
+	if ((*msg)->to != NULL) {
+		for (int i = 0; i < MAX_RECIPIENTS; i++)
+			if ((*msg)->to[i] != NULL)
+				free((*msg)->to[i]);
+			free((*msg)->to);
+			(*msg)->rnum = 0;
+	}
+	free(*msg);
+	*msg = NULL;
+}
+
+void init_message_struct(struct msg_t** msg)
+{
+	if (*msg != NULL)
+		free_message_struct(msg);
+	
+	int mailcount = 150;
+	*msg = (struct msg_t*) malloc(sizeof(struct msg_t));
+	(*msg)->from = (char*) malloc(sizeof(char) * mailcount);
+	(*msg)->to = (char**) malloc(sizeof(char*) * MAX_RECIPIENTS);
+	for (int i = 0; i < MAX_RECIPIENTS; i++)
+		(*msg)->to[i] = (char*)malloc(sizeof(char) * mailcount);
+	(*msg)->rnum = 0;
+	// body
+	(*msg)->body = (char*)malloc(sizeof(char));
+	(*msg)->body[0] = '\0';
+	(*msg)->blen = 0;
+}
+
 // initialize client socket
 // returns data of socket
 struct cs_data_t* bind_client_data(int fd, struct sockaddr addr, int state)
@@ -149,7 +187,7 @@ struct cs_data_t* bind_client_data(int fd, struct sockaddr addr, int state)
 	data->addr = addr;
 	data->flw = true;
 	data->state = state;
-	data->msg = NULL;
+	init_message_struct(&(data->msg));
 	data->buf = malloc(sizeof(*(data->buf)) * BUFFER_SIZE);
 	data->offset = 0;
 	//printf("Worker(%d): bind data to socket (fd = %d)\n", getpid(), fd);
@@ -159,20 +197,7 @@ struct cs_data_t* bind_client_data(int fd, struct sockaddr addr, int state)
 // free data of client
 void free_client_data(struct cs_data_t** data)
 {
-	struct cs_data_t* tmp = *data;
-	if (tmp->buf != NULL)
-		free(tmp->buf);
-
-	if (tmp->msg != NULL) {
-		if (tmp->msg->body != NULL)
-			free(tmp->msg->body);
-		if (tmp->msg->from != NULL)
-			free(tmp->msg->from);
-		for (int i = 0; i < tmp->msg->rnum; i++)
-			if (tmp->msg->to[i] != NULL)
-				free(tmp->msg->to[i]);
-		free(tmp->msg);
-	}
+	free_message_struct(&(*data)->msg);
 	free(*data);
 	*data = NULL;
 }

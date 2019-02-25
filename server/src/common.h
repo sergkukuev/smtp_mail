@@ -74,9 +74,8 @@ bool save_to_file(char* fname, char* msg, bool info);
 // send message to log message queue
 int mq_log(int lg, char* msg);
 
-// message function
-void init_message(struct msg_t** msg);
-void free_message(struct msg_t** msg);
+// function of clear msg_t
+void clear_message(struct msg_t* msg);
 
 char* parse_mail(char* bf);
 int save_message(struct msg_t* msg);

@@ -42,10 +42,11 @@ int MAIL_handle(struct cs_data_t* cs, char* msg)
     int result = DATA_FAILED;
     switch (cs->state) {
     case SOCKET_STATE_WAIT: {
-        if (cs->msg == NULL)    init_message(&cs->msg); // message initialization
+        // TODO: check fall connections
         char* from = cs->msg->from = parse_mail(msg);
         char bf[BUFFER_SIZE] = RSMTP_250;
-        if (from == NULL)   sprintf(bf, "%s", RSMTP_450);
+        if (strlen(from) == 0)
+            sprintf(bf, "%s", RSMTP_450);
         result = send_data(cs->fd, bf, strlen(bf), 0);
         if (result >= 0 && strcmp(bf, RSMTP_250) == 0)    // change socket state
             cs->state = SOCKET_STATE_MAIL;
@@ -67,8 +68,9 @@ int RCPT_handle(struct cs_data_t* cs, char* msg)
         // check maximal recepients
         char bf[BUFFER_SIZE] = RSMTP_451;
         if (cs->msg->rnum != 10) {
+            // TODO: check fall connections
             char* to = cs->msg->to[cs->msg->rnum] = parse_mail(msg);
-            if (to != NULL) {
+            if (strlen(to) != 0) {
                 cs->msg->rnum++;
                 sprintf(bf, "%s", RSMTP_250_RCPT);
             } else {
@@ -95,12 +97,8 @@ int DATA_handle(struct cs_data_t* cs, char* msg)
         //if (strcmp(msg, "") == 0 || msg == NULL) {
             char bf[BUFFER_SIZE] = RSMTP_354;
             result = send_data(cs->fd, bf, strlen(bf), 0);
-            if (result >= 0) { 
+            if (result >= 0)
                 cs->state = SOCKET_STATE_DATA;
-                cs->msg->body = (char*) malloc(1);
-                cs->msg->body[0] = '\0';
-                cs->msg->blen = 0;
-            }
         //} else {
         //    result = send_data(cs->fd, RSMTP_501, strlen(RSMTP_501), 0);
         //}
@@ -127,7 +125,7 @@ int RSET_handle(struct cs_data_t* cs, char* msg)
         result = send_data(cs->fd, bf, strlen(bf), 0);
         if (result >= 0) {
             cs->state = SOCKET_STATE_WAIT;
-            free_message(&cs->msg);     // free message structure
+            clear_message(cs->msg);
         }       
     //} else {
     //    result = send_data(cs->fd, RSMTP_501, strlen(RSMTP_501), 0);
@@ -163,7 +161,7 @@ int TEXT_handle(struct cs_data_t* cs, char* msg)
         if (strlen(cs->msg->body) + strlen(cs->buf) >= cs->msg->blen) {
             // reallocate
             int sz = strlen(cs->msg->body) + BUFFER_SIZE * 2;
-            cs->msg->body = (char*)realloc(cs->msg->body, sz);
+            cs->msg->body = (char*) realloc(cs->msg->body, sz);
             cs->msg->blen = sz; 
         }
         strcat(cs->msg->body, cs->buf);
@@ -172,6 +170,8 @@ int TEXT_handle(struct cs_data_t* cs, char* msg)
         *(cs->msg->body + cs->msg->blen + 1) = '\0';
     } else {
         // end message
+        printf("\n\n%s\n\n", cs->msg->body);
+        // TODO: check fall connections
         save_message(cs->msg);
         cs->state = SOCKET_STATE_TEXT;
         result = RSET_handle(cs, NULL);
