@@ -28,7 +28,6 @@
 #define SOCKET_STATE_MAIL 2
 #define SOCKET_STATE_RCPT 3
 #define SOCKET_STATE_DATA 4
-#define SOCKET_STATE_TEXT 5
 #define SOCKET_STATE_CLOSED 5
 #define SOCKET_STATE_START 6
 
@@ -54,6 +53,7 @@ struct cs_data_t {
     struct sockaddr addr;
     int state;
     char* buf;
+    bool hmode;  // true - helo, false - ehlo
     bool flw;
     int offset;
     struct msg_t* msg;
