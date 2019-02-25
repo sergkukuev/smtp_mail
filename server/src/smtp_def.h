@@ -24,20 +24,23 @@
 #define STR_QUIT "QUIT"
 #define STR_VRFY "VRFY"
 
-// replies smtp
-#define RSMTP_HELLO "220 SMTP CCSMTP bmstu myserver.ru \r\n"
-#define RSMTP_221 "221 closing connection \r\n"
-#define RSMTP_250 "250 OK \r\n"
-#define RSMTP_250_TEXT "250- "
-#define RSMTP_250_RESET "250 Reset OK \r\n"
-#define RSMTP_250_RCPT "250 Accepted \r\n"
-#define RSMTP_252_VRFY "252 Administrative prohibition \r\n"
-#define RSMTP_354 "354 Enter message, ending with \".\" on a line by itself \r\n"
-#define RSMTP_450 "450 mailbox unavailable \r\n"
-#define RSMTP_451 "451 too much recepients \r\n"
-#define RSMTP_500 "500 Unrecognized command \r\n"
-#define RSMTP_500_FILLED "500 filled \r\n"
-#define RSMTP_501 "501 invalid argument(s) \r\n"
-#define RSMTP_503 "503 Wrong command sequence \r\n"
+// replies smtp server
+// 2xx
+#define REPLY_HELLO "220 SMTP bmstu myserver.ru ready\r\n"
+#define REPLY_EHLO "250-VRFY\r\n250-NOOP\r\n250-RSET\r\n"
+#define REPLY_QUIT "221 close connection\r\n"
+#define REPLY_OK "250 OK\r\n"
+#define REPLY_ADMIN "252 Administrative prohibition\r\n"
+// 3xx
+#define REPLY_DATA "354 Enter message, ending with \".\" on a line by itself\r\n"
+// 4xx
+#define REPLY_TERMINATE "421 closing server\r\n"
+#define REPLY_UN_MAIL "450 mailbox unavailable\r\n"
+#define REPLY_MUCH_REC "451 too much recepients\r\n"
+#define REPLY_MEM "452 memory is filled\r\n"
+// 5xx
+#define REPLY_UNREC "500 Unrecognized command\r\n"
+#define REPLY_ARGS "501 invalid argument(s)\r\n"
+#define REPLY_SEQ "503 Wrong command sequence\r\n"
 
 #endif // !__SMTP_DEF_H__
