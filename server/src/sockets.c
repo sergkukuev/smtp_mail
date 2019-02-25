@@ -63,8 +63,13 @@ void parse_error(int err)
 // return fd or error
 int create_listen_socket(struct addrinfo* inst)
 {
-	void* addr = &((struct sockaddr_in*)inst->ai_addr)->sin_addr;
-    char ip_str[INET6_ADDRSTRLEN];
+	void* addr;
+	char ip_str[INET6_ADDRSTRLEN];
+
+	if (inst->ai_family == AF_INET)
+		addr = &((struct sockaddr_in*)inst->ai_addr)->sin_addr;
+    else
+		addr = &((struct sockaddr_in6*)inst->ai_addr)->sin6_addr;
 
 	// get readable ip 
 	inet_ntop(inst->ai_family, addr, ip_str, sizeof(ip_str));
