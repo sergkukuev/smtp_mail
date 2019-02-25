@@ -204,9 +204,10 @@ void free_client_data(struct cs_data_t** data)
 
 // close clients socket by state
 // state = SOCKET_NOSTATE - close all sockets in list
-void close_client_sockets_by_state(struct cs_node_t** head, int state)
+int close_client_sockets_by_state(struct cs_node_t** head, int state)
 {
 	struct cs_node_t* prev = NULL;
+	int count = 0;
 	for (struct cs_node_t* tmp = *head; tmp != NULL; tmp = tmp->next) {
 		if (tmp->cs->state == state || state == SOCKET_NOSTATE) {
 			if (prev == NULL)	// move head
@@ -217,7 +218,9 @@ void close_client_sockets_by_state(struct cs_node_t** head, int state)
 			free_client_data(&tmp->cs);
 			tmp = prev->next;
 		}
+		count++;
 	}
+	return count;
 }
 
 // accept connections

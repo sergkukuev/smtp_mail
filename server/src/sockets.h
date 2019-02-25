@@ -19,7 +19,8 @@ struct cs_node_t* close_client_socket(struct cs_node_t* node_cs);
 
 // close clients socket by state
 // state = SOCKET_NOSTATE - close all sockets in list
-void close_client_sockets_by_state(struct cs_node_t** head_cs, int state);
+// returns count of sockets
+int close_client_sockets_by_state(struct cs_node_t** head_cs, int state);
 
 // accept client socket
 // return client data
