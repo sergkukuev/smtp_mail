@@ -1,5 +1,6 @@
 #include "smtp.h"
 #include "smtp_def.h"
+#include "sockets.h"
 #include "handlers.h"
 
 
@@ -35,7 +36,7 @@ int key_switcher(struct cs_data_t* cs, char* msg, bool* quit, int lg)
     printf("Worker(%d): index of key command %d\n", getpid(), key);
     switch(parse_key_word(cs->buf)) {
         case KEY_HELO:
-            err = HELO_handle(cs, msg + 5, false);
+            err = HELO_handle(cs, msg + 5);
             break;
         case KEY_EHLO:
             err = EHLO_handle(cs, msg + 5);
@@ -111,7 +112,7 @@ bool send_greeting(struct cs_data_t* cs)
 {
     if (cs->state == SOCKET_STATE_START) {
         char bf[BUFFER_SIZE];
-        sprintf(bf, "%s", RSMTP_HELLO);
+        sprintf(bf, "%s", REPLY_HELLO);
         switch(send_data(cs->fd, bf, strlen(bf), 0)) {
         case DATA_BLOCK:
             break;
@@ -132,7 +133,7 @@ bool is_buffer_filled(struct cs_data_t* cs, int bf_left)
 {
     if (bf_left == 0) {
         char bf[BUFFER_SIZE];
-        sprintf(bf, RSMTP_500_FILLED);
+        sprintf(bf, REPLY_MEM);
         switch(send_data(cs->fd, bf, strlen(bf), 0)) {
         case DATA_BLOCK:
             break;
