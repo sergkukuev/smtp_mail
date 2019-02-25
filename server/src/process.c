@@ -161,17 +161,17 @@ void run_process(struct process_t* proc)
         // clear fd
         FD_ZERO(proc->readfds);
         FD_ZERO(proc->writefds);
-        // set listener socket and logger 
+        // set listener socket and cmd 
         FD_SET(proc->fd.listen, proc->readfds);
         FD_SET(proc->fd.cmd, proc->readfds);
 
         // delete all closed sockets
-        close_client_sockets_by_state(&(proc->s_list), SOCKET_STATE_CLOSED);
+        int sc = close_client_sockets_by_state(&(proc->s_list), SOCKET_STATE_CLOSED);
 
         // log
         char bf[BUFFER_SIZE];
         memset(bf, 0x00, strlen(bf));
-        sprintf(bf, "socket list pointer = %p is_null = %d", proc->s_list, (proc->s_list == NULL));
+        sprintf(bf, "socket_lp = %p, count = %d", proc->s_list, sc);
         mq_log(proc->fd.logger, bf);
 
         // sets all sockets in array
