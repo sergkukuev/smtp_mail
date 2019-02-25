@@ -21,5 +21,9 @@ server_r:
 server_d:
 	$(CC) $(STD) $(DFLAGS) sockets.c smtp.c server.c logger.c common.c process.c handlers.c -o server $(PF)
 
+# Launch tests
+valgrind_test:
+	valgrind --leak-check=full --leak-resolution=med --quiet --log-file=valgrind_log ./server
+
 clean:
 	rm -rf *.o server client
