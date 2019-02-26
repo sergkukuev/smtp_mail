@@ -1,7 +1,9 @@
 # Makefile for finite state machine
 
-all : autogen
+DIR = generate
+MAIN_FILE = server.def
+DOT_FILE = server.dot
 
-autogen: 
-	autogen server.def
-	mkdir autogen && mv server-fsm.c server-fsm.h autogen
+fsm: $(MAIN_FILE)
+	autogen $<
+	python scripts/fsm2dot.py $< > $(DOT_FILE)
