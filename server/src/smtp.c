@@ -97,7 +97,7 @@ void accept_handle(struct cs_data_t* cs, int bf_left, int lg)
     switch (recv_data(cs->fd, cs->buf + cs->offset, bf_left, 0)) {
     case DATA_BLOCK:
         break;
-    case DATA_FAILED:
+    case DATA_NOT_SEND:
     case DATA_EMPTY:
         cs->state = SOCKET_STATE_CLOSED;
         break;
@@ -116,7 +116,7 @@ bool send_greeting(struct cs_data_t* cs)
         switch(send_data(cs->fd, bf, strlen(bf), 0)) {
         case DATA_BLOCK:
             break;
-        case DATA_FAILED:
+        case DATA_NOT_SEND:
             cs->state = SOCKET_STATE_CLOSED;
             break;
         default:
@@ -137,7 +137,7 @@ bool is_buffer_filled(struct cs_data_t* cs, int bf_left)
         switch(send_data(cs->fd, bf, strlen(bf), 0)) {
         case DATA_BLOCK:
             break;
-        case DATA_FAILED:
+        case DATA_NOT_SEND:
             cs->state = SOCKET_STATE_CLOSED;
             break;
         default:

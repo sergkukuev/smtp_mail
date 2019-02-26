@@ -16,17 +16,17 @@
 // sending data
 int send_data(int fd, char* bf, size_t bfsz, int flags)
 {
-    if (fd <= 0)    return DATA_FAILED;
+    if (fd <= 0)    return DATA_NOT_SEND;
     int nbytes = send(fd, bf, bfsz, flags);
-    return nbytes < 0 ? ((errno == EWOULDBLOCK) ? DATA_BLOCK : DATA_FAILED) : nbytes;
+    return nbytes < 0 ? ((errno == EWOULDBLOCK) ? DATA_BLOCK : DATA_NOT_SEND) : nbytes;
 }
 
 // recv data
 int recv_data(int fd, char* bf, size_t bfsz, int flags)
 {
-    if (fd <= 0)    return DATA_FAILED;
+    if (fd <= 0)    return DATA_NOT_SEND;
     int nbytes = recv(fd, bf, bfsz, flags);
-    return nbytes < 0 ? ((errno == EWOULDBLOCK) ? DATA_BLOCK : DATA_FAILED) : nbytes;
+    return nbytes < 0 ? ((errno == EWOULDBLOCK) ? DATA_BLOCK : DATA_NOT_SEND) : nbytes;
 }
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -218,8 +218,9 @@ struct cs_data_t* bind_client_data(int fd, struct sockaddr addr, int state)
 // free data of client
 void free_client_data(struct cs_data_t** data)
 {
-	if (close((*data)->fd) != 0)	// close socket
-		parse_error(ERR_CLOSE);
+	if ((*data)->fd > 0)	// close socket
+		if (close((*data)->fd) != 0)	
+			parse_error(ERR_CLOSE);
 	free_message_struct(&(*data)->msg);
 	free(*data);
 	*data = NULL;

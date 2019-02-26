@@ -4,7 +4,8 @@
 #include "common.h"
 
 // defines reply and receive
-#define DATA_FAILED -2
+#define DATA_S_EMPTY -3
+#define DATA_NOT_SEND -2
 #define DATA_BLOCK -1
 #define DATA_EMPTY 0
 
