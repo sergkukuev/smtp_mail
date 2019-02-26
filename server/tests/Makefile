@@ -9,7 +9,8 @@ PF = -lrt -lpthread -lresolv -lcunit
 # Common
 CF = -D_XOPEN_SOURCE
 # All files 
-FILES = unit/test_main.c
+FILES = ../src/sockets.c ../src/smtp.c ../src/logger.c ../src/common.c ../src/process.c ../src/handlers.c
+TESTS = unit/test_main.c unit/test_handlers.c
 
 all: clean release
 
@@ -22,7 +23,7 @@ run_valgrind:
 	valgrind --leak-check=full --leak-resolution=med --quiet --log-file=valgrind_log ../src/server.out
 
 unit_tests:
-	$(CC) $(STD) $(DFLAGS) $(FILES) unit_tests.c -o unit_tests.out $(PF)
+	$(CC) $(STD) $(DFLAGS) $(FILES) $(TESTS) unit_tests.c -o unit_tests.out $(PF)
 
 clean:
 	rm -rf *.o unit_tests.out
