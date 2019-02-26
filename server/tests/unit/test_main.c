@@ -15,13 +15,13 @@ int add_mytests(CU_pSuite suite)
         // add tests here
         // sockets
         ADD_SUITE_TEST(suite, socket_listen_correct)
-        ADD_SUITE_TEST(suite, socket_bind_client_data_correct)
+        //ADD_SUITE_TEST(suite, socket_bind_client_data_correct)
         ADD_SUITE_TEST(suite, socket_accept_incorrect)
         ADD_SUITE_TEST(suite, socket_clients_close_correct)
         ADD_SUITE_TEST(suite, socket_send_data_incorrect)
         ADD_SUITE_TEST(suite, socket_recv_data_incorrect)
         // handlers
-        ADD_SUITE_TEST(suite, full_correct_session)
+        //ADD_SUITE_TEST(suite, full_correct_session)
         ADD_SUITE_TEST(suite, handle_helo_correct)
         ADD_SUITE_TEST(suite, handle_helo_incorrect)
         ADD_SUITE_TEST(suite, handle_ehlo_correct)
