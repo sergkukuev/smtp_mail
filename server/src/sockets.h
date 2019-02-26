@@ -15,6 +15,10 @@ int init_listen_socket();
 // close listen socket
 int close_listen_socket(int fd);
 
+// initialize client socket
+// returns data of socket
+struct cs_data_t* bind_client_data(int fd, struct sockaddr addr, int state);
+
 // free data of client
 void free_client_data(struct cs_data_t** data);
 
