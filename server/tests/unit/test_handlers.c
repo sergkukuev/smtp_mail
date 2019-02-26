@@ -2,6 +2,60 @@
 #include "../../src/handlers.h"
 #include "../../src/sockets.h"
 
+MYTEST(full_correct_session)
+{
+    char* msg = "EHLO localhost";
+    struct sockaddr addr;
+    struct cs_data_t* data = bind_client_data(0, addr, SOCKET_STATE_INIT);
+
+    int err = EHLO_handle(data, msg + 5);
+    CU_ASSERT_NOT_EQUAL(data, NULL);
+    CU_ASSERT_EQUAL(data->fd, 0);
+    CU_ASSERT_EQUAL(data->state, SOCKET_STATE_WAIT);
+    CU_ASSERT_EQUAL(err, DATA_NOT_SEND);
+
+    char* msg1 = "MAIL <test@test.ru>";
+    err = MAIL_handle(data, msg1 + 5);
+    CU_ASSERT_NOT_EQUAL(data, NULL);
+    CU_ASSERT_EQUAL(data->fd, 0);
+    CU_ASSERT_EQUAL(data->state, SOCKET_STATE_MAIL);
+    CU_ASSERT_EQUAL(err, DATA_NOT_SEND);
+
+    char* msg2 = "RCPT <test@test.ru>";
+    err = RCPT_handle(data, msg2 + 5);
+    CU_ASSERT_NOT_EQUAL(data, NULL);
+    CU_ASSERT_EQUAL(data->fd, 0);
+    CU_ASSERT_EQUAL(data->state, SOCKET_STATE_RCPT);
+    CU_ASSERT_EQUAL(err, DATA_NOT_SEND);
+
+    char* msg3 = "DATA";
+    err = DATA_handle(data, msg3+5);
+    CU_ASSERT_NOT_EQUAL(data, NULL);
+    CU_ASSERT_EQUAL(data->fd, 0);
+    CU_ASSERT_EQUAL(data->state, SOCKET_STATE_DATA);
+    CU_ASSERT_EQUAL(err, DATA_NOT_SEND);
+
+    char* msg4 = "awdawdnawd";
+    err = TEXT_handle(data, msg4);
+    CU_ASSERT_NOT_EQUAL(data, NULL);
+    CU_ASSERT_EQUAL(data->fd, 0);
+    CU_ASSERT_EQUAL(data->state, SOCKET_STATE_DATA);
+    //CU_ASSERT_EQUAL(data->msg->body, msg4)
+    
+    err = TEXT_handle(data, ".");
+    CU_ASSERT_NOT_EQUAL(data, NULL);
+    CU_ASSERT_EQUAL(data->fd, 0);
+    CU_ASSERT_EQUAL(data->state, SOCKET_STATE_WAIT);
+    //CU_ASSERT_EQUAL(err, DATA_NOT_SEND);
+
+    err = QUIT_handle(data, "");
+    CU_ASSERT_NOT_EQUAL(data, NULL);
+    CU_ASSERT_EQUAL(data->fd, 0);
+    CU_ASSERT_EQUAL(data->state, SOCKET_STATE_CLOSED);
+    CU_ASSERT_EQUAL(err, DATA_NOT_SEND);
+    free_client_data(&data);
+}
+
 MYTEST(handle_helo_correct)
 {
     char* msg = "HELO server.ru";

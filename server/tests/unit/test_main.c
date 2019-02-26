@@ -12,6 +12,7 @@ int add_mytests(CU_pSuite suite)
 {
     if (suite) {
         // add tests here
+        ADD_SUITE_TEST(suite, full_correct_session)
         ADD_SUITE_TEST(suite, handle_helo_correct)
         ADD_SUITE_TEST(suite, handle_helo_incorrect)
         ADD_SUITE_TEST(suite, handle_ehlo_correct)
