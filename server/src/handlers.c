@@ -158,7 +158,7 @@ int TEXT_handle(struct cs_data_t* cs, char* msg)
 {
     if (cs == NULL) return DATA_S_EMPTY;
     int result = 0;
-    if (strcmp(cs->buf, ".") != 0) {
+    if (strcmp(msg, ".") != 0) {
         if (strlen(cs->msg->body) + strlen(cs->buf) >= cs->msg->blen) {
             // reallocate
             int sz = strlen(cs->msg->body) + BUFFER_SIZE * 2;
@@ -169,6 +169,7 @@ int TEXT_handle(struct cs_data_t* cs, char* msg)
         // sprintf(cs->msg->body + cs->msg->blen, "\n");
         cs->msg->body[cs->msg->blen] = '\n';
         *(cs->msg->body + cs->msg->blen + 1) = '\0';
+        result = strlen(cs->msg->body);
     } else {
         // end message
         // printf("\n\n%s\n\n", cs->msg->body);
