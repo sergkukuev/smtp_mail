@@ -1,0 +1,40 @@
+autogen definitions fsm;
+
+method = case;
+type   = reentrant;
+cookie = "const char *cmd";
+cookie = "void *state";
+
+prefix = smtp_server_fsm;
+
+state = SOCKET_STATE_INIT, SOCKET_STATE_WAIT, SOCKET_STATE_MAIL, SOCKET_STATE_RCPT, SOCKET_STATE_DATA, SOCKET_STATE_SEND, SOCKET_STATE_CLOSED;
+event = HELO, EHLO, MAIL, RCPT, RSET, DATA, QUIT, NOOP, UNDEFINED, TEXT, connection_established, connection_failed, SAVED, text, CLRF_dot_CLRF;
+
+transition =
+{ tst  = '*';	tev = connection_established; next = SOCKET_STATE_INIT; },
+{ tst  = SOCKET_STATE_INIT;	tev = NOOP; next = SOCKET_STATE_INIT; },
+{ tst  = SOCKET_STATE_INIT;	tev = HELO; next = SOCKET_STATE_WAIT; },
+{ tst  = SOCKET_STATE_INIT;	tev = QUIT; next = SOCKET_STATE_CLOSED; },
+{ tst  = SOCKET_STATE_INIT;	tev = NOOP; next = SOCKET_STATE_INIT; },
+{ tst  = SOCKET_STATE_WAIT;	tev = NOOP; next = SOCKET_STATE_WAIT; },
+{ tst  = SOCKET_STATE_WAIT;	tev = RSET; next = SOCKET_STATE_WAIT; },
+{ tst  = SOCKET_STATE_WAIT;	tev = MAIL; next = SOCKET_STATE_MAIL; },
+{ tst  = SOCKET_STATE_MAIL;	tev = NOOP; next = SOCKET_STATE_MAIL; },
+{ tst  = SOCKET_STATE_MAIL;	tev = RSET; next = SOCKET_STATE_WAIT; },
+{ tst  = SOCKET_STATE_MAIL;	tev = RCPT; next = SOCKET_STATE_RCPT; },
+{ tst  = SOCKET_STATE_RCPT;	tev = RCPT; next = SOCKET_STATE_RCPT; },
+{ tst  = SOCKET_STATE_RCPT;	tev = NOOP; next = SOCKET_STATE_RCPT; },
+{ tst  = SOCKET_STATE_RCPT;	tev = RSET; next = SOCKET_STATE_WAIT; },
+{ tst  = SOCKET_STATE_RCPT;	tev = DATA; next = SOCKET_STATE_DATA; },
+{ tst  = SOCKET_STATE_DATA;	tev = TEXT; next = SOCKET_STATE_DATA; },
+{ tst  = SOCKET_STATE_DATA;	tev = CLRF_dot_CLRF; next = SOCKET_STATE_SEND; },
+{ tst  = SOCKET_STATE_SEND;	tev = SAVED; next = SOCKET_STATE_WAIT; },
+{ tst  = SOCKET_STATE_WAIT;	tev = QUIT; next = SOCKET_STATE_CLOSED; },
+{ tst  = SOCKET_STATE_MAIL;	tev = QUIT; next = SOCKET_STATE_CLOSED; },
+{ tst  = SOCKET_STATE_RCPT;	tev = QUIT; next = SOCKET_STATE_CLOSED; },
+
+{ tst  = SOCKET_STATE_INIT;	tev = connection_failed; next = SOCKET_STATE_CLOSED; },
+{ tst  = SOCKET_STATE_WAIT;	tev = connection_failed; next = SOCKET_STATE_CLOSED; },
+{ tst  = SOCKET_STATE_MAIL;	tev = connection_failed; next = SOCKET_STATE_CLOSED; },
+{ tst  = SOCKET_STATE_RCPT;	tev = connection_failed; next = SOCKET_STATE_CLOSED; },
+{ tst  = SOCKET_STATE_DATA;	tev = connection_failed; next = SOCKET_STATE_CLOSED; };

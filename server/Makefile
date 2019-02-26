@@ -1,9 +1,14 @@
 # Main makefile
 all: 
-	+$(MAKE) -C src all
+	+$(MAKE) -C src
+	+$(MAKE) -C tests
+	+$(MAKE) -C fsm
 
-debug:
+server:
 	+$(MAKE) -C src debug
+
+fsm:
+	+$(MAKE) -C fsm
 
 run_valgrind:
 	+$(MAKE) -C tests run_valgrind
