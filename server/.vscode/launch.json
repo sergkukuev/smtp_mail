@@ -8,7 +8,7 @@
             "name": "Server (debug)",
             "type": "cppdbg",
             "request": "launch",
-            "program": "${workspaceFolder}/src/server",
+            "program": "${workspaceFolder}/src/server.out",
             "args": [],
             "stopAtEntry": false,
             "cwd": "${workspaceFolder}",
@@ -28,7 +28,7 @@
             "name": "Server (release)",
             "type": "cppdbg",
             "request": "launch",
-            "program": "${workspaceFolder}/src/server",
+            "program": "${workspaceFolder}/src/server.out",
             "args": [],
             "stopAtEntry": false,
             "cwd": "${workspaceFolder}",
@@ -43,6 +43,26 @@
                 }
             ],
             "preLaunchTask": "Build release"
-        }
+        },
+        {
+            "name": "Tests",
+            "type": "cppdbg",
+            "request": "launch",
+            "program": "${workspaceFolder}/tests/unit_tests.out",
+            "args": [],
+            "stopAtEntry": false,
+            "cwd": "${workspaceFolder}",
+            "environment": [],
+            "externalConsole": true,
+            "MIMode": "gdb",
+            "setupCommands": [
+                {
+                    "description": "Enable pretty-printing for gdb",
+                    "text": "-enable-pretty-printing",
+                    "ignoreFailures": true
+                }
+            ],
+            "preLaunchTask": "Build tests"
+        },
     ]
 }
