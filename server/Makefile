@@ -5,8 +5,12 @@ all:
 debug:
 	+$(MAKE) -C src debug
 
-valgrind_test:
-	+$(MAKE) -C src valgrind_test
+run_valgrind:
+	+$(MAKE) -C tests run_valgrind
+
+unit_tests:
+	+$(MAKE) -C tests unit_tests
 
 clean:
 	+$(MAKE) -C src clean
+	+$(MAKE) -C tests clean
