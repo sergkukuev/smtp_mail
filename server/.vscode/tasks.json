@@ -4,6 +4,12 @@
     "version": "2.0.0",
     "tasks": [
         {
+            "label": "Build tests",
+            "type": "shell",
+            "command": "make unit_tests",
+            "group": "none"
+        },
+        {
             "label": "Build release",
             "type": "shell",
             "command": "make clean && make",

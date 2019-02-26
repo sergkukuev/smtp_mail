@@ -8,6 +8,8 @@ DFLAGS = -Wall -g3
 PF = -lrt -lpthread -lresolv
 # Common
 CF = -D_XOPEN_SOURCE
+# All files
+FILES = sockets.c smtp.c logger.c common.c process.c handlers.c
 
 all: clean release
 
@@ -16,10 +18,10 @@ debug: server_d
 
 # Launch server
 server_r:
-	$(CC) $(STD) $(RFLAGS) sockets.c smtp.c server.c logger.c common.c process.c handlers.c -o server $(PF)
+	$(CC) $(STD) $(RFLAGS) $(FILES) server.c -o server.out $(PF)
 
 server_d:
-	$(CC) $(STD) $(DFLAGS) sockets.c smtp.c server.c logger.c common.c process.c handlers.c -o server $(PF)
+	$(CC) $(STD) $(DFLAGS) $(FILES) server.c -o server.out $(PF)
 
 clean:
-	rm -rf *.o server client
+	rm -rf *.o server.out

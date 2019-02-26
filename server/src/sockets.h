@@ -3,23 +3,43 @@
 
 #include "common.h"
 
-// server sockets initialization by getaddrinfo()
-// returns head-pointer of list
-struct ss_node_t* init_serv_sockets();
+// defines reply and receive
+#define DATA_S_EMPTY -3
+#define DATA_NOT_SEND -2
+#define DATA_BLOCK -1
+#define DATA_EMPTY 0
 
-// client sockets initialization
-// returns head-pointer of list
-struct cs_node_t* init_client_sockets(struct ss_node_t* ss_list, int* max_fd);
+// initialize listen socket
+// returns fd
+int init_listen_socket();
 
-// delete all clients sockets by state
-// returns new head header
-struct cs_node_t* delete_sockets_by_state(struct cs_node_t* cs, int state);
+// close listen socket
+int close_listen_socket(int fd);
 
-// delete all sockets
-// return numeric sockets
-int delete_client_sockets(struct cs_node_t** cs);
+// initialize client socket
+// returns data of socket
+struct cs_data_t* bind_client_data(int fd, struct sockaddr addr, int state);
 
-// parse result function select() inside process
-void parse_select(struct process_t* proc);
+// free data of client
+void free_client_data(struct cs_data_t** data);
+
+// close client socket
+// returns node_cs->next
+struct cs_node_t* close_client_socket(struct cs_node_t* node_cs);
+
+// close clients socket by state
+// state = SOCKET_NOSTATE - close all sockets in list
+// returns count of sockets
+int close_client_sockets_by_state(struct cs_node_t** head_cs, int state);
+
+// accept client socket
+// return client data
+struct cs_data_t* accept_client_socket(int fd);
+
+// sending data
+int send_data(int fd, char* bf, size_t bfsz, int flags);
+
+// receive data
+int recv_data(int fd, char* bf, size_t bfsz, int flags);
 
 #endif

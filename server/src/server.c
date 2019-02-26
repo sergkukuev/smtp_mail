@@ -3,48 +3,90 @@
 #include "logger.h"
 
 #include "common.h"
+#include <sys/wait.h>
+#include <signal.h>
+#include <mqueue.h>
 
-#include <errno.h>
-#include <unistd.h>
+// failed initialization
+#define NO_FAILED 0
+#define FAILED_LSOCKET -2
+#define FAILED_LOGGER -3
+#define FAILED_PROCESSES -4
 
-#define SERVER_FAILED -1
-#define SERVER_FINISH 0
+// server struct 
+struct server_t {
+    pid_t* workers;
+    pid_t logger;
+    int nworkers;
+    int lstfd;  // listener fd
+};
 
-// pid_t processes and logger
-int init_server(pid_t* pr, pid_t* lg)
+static struct server_t server;
+
+void graceful_exit(int sig)
 {
-    struct ss_node_t* fds = init_serv_sockets();
-    if (fds == NULL)
-        return SERVER_FAILED;
-
-    *lg = create_logger();
-    if (*lg == -1)
-        return SERVER_FAILED;
-
-    *pr = create_process(fds, *lg);
-    if (*pr == -1)
-        return SERVER_FAILED;
-    return 0;
+    signal(sig, SIG_IGN);
+    printf("\nServer(%d): terminating...\n", getpid());
+    // connect to logger message queue
+    char name[BUFFER_SIZE];
+    sprintf(name, "/exit%d", server.logger);
+    int lg = mq_open(name, O_WRONLY);
+    if (lg == -1) {
+        perror("graceful_exit() failed");
+        exit(EXIT_FAILURE);
+    }
+    // spam exit for workers
+    for (int i = 0; i < server.nworkers; i++) {
+        if (mq_send(lg, "#", sizeof(char), 0) == -1) {
+            perror("graceful_exit() failed");
+            exit(EXIT_FAILURE);
+        }
+    }
+    // special command for logger
+    if (mq_send(lg, "$", sizeof(char), 0) == -1) {
+        perror("graceful_exit() failed");
+        exit(EXIT_FAILURE);
+    }
+    // waiting success exit all child processes
+    int status = 0;
+    while (wait(&status) > 0) sleep(1);
+    char* lgname = malloc(sizeof(*lgname) * 20);
+    sprintf(lgname, "/exit%d", lg);
+    mq_close(lg);
+    mq_unlink(lgname);
+    free(server.workers);
+    // free listen server
+    if (close_listen_socket(server.lstfd) == -1) {
+        perror("graceful_exit() failed");
+        exit(EXIT_FAILURE);
+    }
+    printf("Server(%d): done\n", getpid());
+    exit(EXIT_SUCCESS);
 }
 
-int run_server(pid_t pr, pid_t lg)
+int init_server()
 {
-    // period send info we are alive 
-    char bf[100];
-    sprintf(bf, "/process%d", lg);
-    mqd_t mq = mq_open(bf, O_WRONLY);   // bf - name of queue
-    while(1) {
-        sprintf(bf, "%s", "server is alive");
-        mq_log(mq, bf);
-        sleep(200);
-    }
-    return 0;
+    server.lstfd = init_listen_socket();
+    if (server.lstfd < 0)
+        return FAILED_LSOCKET;
+
+    server.logger = create_logger();
+    if (server.logger == -1)
+        return FAILED_LOGGER;
+
+    server.workers = malloc(sizeof(*(server.workers)) * server.nworkers);
+    int ncreated = create_processes(server.lstfd, server.workers, server.nworkers, server.logger);
+    if (server.nworkers != ncreated)
+        return FAILED_PROCESSES;
+
+    return NO_FAILED;
 }
 
 // parse command line
 void parse_cmd(int argc, char** argv)
 {
     // TODO: port, address, num-processes, etc.
+    server.nworkers = 2;
 }
 
 /////////////////////////////////////////////////////////////////////
@@ -52,11 +94,27 @@ void parse_cmd(int argc, char** argv)
 int main(int argc, char** argv)
 {
     parse_cmd(argc, argv);
-    pid_t pr, lg;
-    if (init_server(&pr, &lg) == SERVER_FAILED) {
-        perror("init_server() failed");
-        exit(SERVER_FAILED);
+    switch(init_server()) {
+        // main loop
+        case NO_FAILED: {
+            signal(SIGINT, graceful_exit);
+            while(1) sleep(5);
+            break;
+        }
+        // TODO: do graceful failed exit 
+        case FAILED_PROCESSES: {
+            break;
+        }
+        case FAILED_LOGGER: {
+            break;
+        }
+        case FAILED_LSOCKET: {
+            break;
+        }
+        default:
+            perror("init_server() failed");
+            exit(EXIT_FAILURE);
+            break;
     }
-
-    return run_server(pr, lg);
+    return EXIT_SUCCESS;
 }

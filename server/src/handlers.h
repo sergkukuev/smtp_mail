@@ -3,19 +3,8 @@
 
 #include "common.h"
 
-// defines reply and receive
-#define DATA_FAILED -2
-#define DATA_BLOCK -1
-#define DATA_EMPTY 0
-
-// sending data
-int send_data(int fd, char* bf, size_t bfsz, int flags);
-
-// receive data
-int recv_data(int fd, char* bf, size_t bfsz, int flags);
-
 // base handlers
-int HELO_handle(struct cs_data_t* cs, char* msg, bool ehlo);
+int HELO_handle(struct cs_data_t* cs, char* msg);
 int EHLO_handle(struct cs_data_t* cs, char* msg);
 int MAIL_handle(struct cs_data_t* cs, char* msg);
 int RCPT_handle(struct cs_data_t* cs, char* msg);

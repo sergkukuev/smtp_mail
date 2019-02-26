@@ -1,13 +1,56 @@
 #include "common.h"
 
-#include <sys/time.h>
 #include <sys/stat.h>
+#include <sys/time.h>
+#include <mqueue.h>
+#include <time.h>
 
-int mq_log(mqd_t lg, char* msg)
+bool save_to_file(char* fname, char* txt, bool info)
 {
-    int res = mq_send(lg, msg, strlen(msg), 0); 
+    FILE* lf = fopen(fname, "a");
+    char msg[BUFFER_SIZE];
+    if (!lf) {
+        sprintf(msg, "error opening log file(%s)", fname);
+        perror(msg);
+        return false;
+    }
+    // variable add '\n' or not
+    (txt[strlen(txt) - 1] == '\n') ? sprintf(msg, "%s", txt) : sprintf(msg, "%s\n", txt); 
+    // write with timetag
+    if (info) {
+        time_t ct = time(NULL);
+        char* t = ctime(&ct);
+        t[strlen(t) - 1] = '\0';
+        fprintf(lf, "[%s]: %s", t, msg);
+    } else  // without timetag
+        fprintf(lf, "%s", msg);
+    fflush(lf);
+    fclose(lf);
+    return true;
+}
+
+int mq_log(int lg, char* msg)
+{
+    char bf[BUFFER_SIZE];
+    sprintf(bf, "%d <%s>", getpid(), msg);
+    int res = mq_send(lg, bf, strlen(bf), 0);
     if (res == -1)  perror(msg);
     return res;
+}
+
+void clear_message(struct msg_t* msg)
+{
+    // clear recipients
+    for (int i = 0; i < MAX_RECIPIENTS; i++) { 
+        memset(msg->to[i], 0x0, strlen(msg->to[i]));
+        //free(msg->to[i]);
+    }
+    memset(msg->from, 0x0, strlen(msg->from));
+    // reallocate buffer
+    free(msg->body);
+    msg->body = (char*)malloc(sizeof(char));
+    msg->body[0] = '\0';
+    msg->rnum = msg->blen = 0;
 }
 
 char* select_from_message(char* message, char* buffer, char* start, char* end) {
@@ -19,15 +62,6 @@ char* select_from_message(char* message, char* buffer, char* start, char* end) {
         buffer[length] = '\0';
     }
     return buffer;
-}
-
-void get_address(struct sockaddr_in* addr, socklen_t* addrlen)
-{
-    memset(addr, 0, sizeof(*addr));
-    addr->sin_family = AF_UNSPEC;
-    addr->sin_addr.s_addr = INADDR_ANY;
-    addr->sin_port = htons(atoi(SERVER_PORT));
-    *addrlen = sizeof(addr);
 }
 
 char* parse_mail(char* message)
@@ -123,4 +157,3 @@ int save_message(struct msg_t *message) {
 	}
 	return 0;
 }
-			

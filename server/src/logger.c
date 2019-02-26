@@ -1,84 +1,71 @@
 #include "logger.h"
 #include "process.h"
 
-#include <sys/types.h>
 #include <sys/select.h>
-#include <unistd.h>
+#include <mqueue.h>
 #include <signal.h>
-#include <time.h>
 
-int save_to_file(char* txt)
-{
-    FILE* lf = fopen("server_log", "a");
-    if (!lf) {
-        perror("error opening log file(server_log)");
-        return -1;
-    }
-    time_t ct = time(NULL);
-    char* t = ctime(&ct);
-    t[strlen(t) - 1] = '\0';
-    char msg[BUFFER_SIZE];
-    // variable add '\n' or not
-    (txt[strlen(txt) - 1] == '\n') ? sprintf(msg, "%s", txt) : sprintf(msg, "%s\n", txt); 
-    fprintf(lf, "[%s]: %s", t, msg);
-    fflush(lf);
-    fclose(lf);
-    return 0;
-}
+#define LOG(msg) save_to_file("server_log", msg, true)
 
 void run_logger(struct process_t* pr) 
 {
 	while (pr->worked) {
 		struct timeval tv;
-		tv.tv_sec = 15;
+		tv.tv_sec = SELECT_TIMEOUT;
 		tv.tv_usec = 0;
 
-		FD_ZERO(&(pr->readfds));
-		if (pr->mq != NULL)
-			FD_SET(*(pr->mq), &(pr->readfds));
-
-		switch(select(pr->max_fd + 1, &(pr->readfds), NULL, NULL, &tv)) {
-        case 0:
-            printf("Logger(%d): Timeout\n", getpid());
-            break;
-        default:
-            if (pr->mq != NULL && FD_ISSET(*(pr->mq), &(pr->readfds))) {
+		FD_ZERO(pr->readfds);
+		FD_SET(pr->fd.logger, pr->readfds);
+        FD_SET(pr->fd.cmd, pr->readfds);
+		switch(select(pr->fd.max + 1, pr->readfds, NULL, NULL, &tv)) {
+            case 0:
+                printf("Logger(%d): Timeout\n", getpid());
+                break;
+            default: {
                 char msg[BUFFER_SIZE];
-                memset(msg, 0x00, sizeof(msg));
-                if (mq_receive(*(pr->mq), msg, BUFFER_SIZE, NULL) >= 0) {
-                    printf("Logger(%d): received message <%s>\n", getpid(), msg);
-                    save_to_file(msg);
-                    if (strcmp(msg, "#") == 0) {
-                        pr->worked = false;
-                        continue;
+                memset(msg, 0x0, sizeof(msg));
+                if (FD_ISSET(pr->fd.cmd, pr->readfds)) {
+                    if (mq_receive(pr->fd.cmd, msg, BUFFER_SIZE, NULL) >= 0) {
+                        if (strcmp(msg, "$") == 0) {
+                            printf("Logger(%d): accept command on close\n", getpid());
+                            LOG("close logger");
+                            pr->worked = false;
+                        }
                     }
-                } else {
-                    printf("Logger(%d): None\n", getpid());
                 }
+                if (FD_ISSET(pr->fd.logger, pr->readfds)) {
+                    if (mq_receive(pr->fd.logger, msg, BUFFER_SIZE, NULL) >= 0) {
+                            printf("Logger(%d): received message from %s\n", getpid(), msg);
+                            LOG(msg);
+                    }
+                }
+                break;
             }
-            break;
         }
     }
 }
 
-pid_t create_logger() 
+void body_logger(int* fd, pid_t* pid)
 {
-	pid_t pid = fork();
-    switch (pid) {
-    case -1:
-        printf("Server(%d): fork() failed\n", getpid()); 
-        break;
-    // child
-    case 0: {
-        struct process_t* pr = init_process(getpid(), getpid(), NULL); 
+    *pid = getpid();
+    struct process_t* pr = init_process(fd, *pid);
+    if (pr != NULL) {
+        char msg[BUFFER_SIZE];
+        sprintf(msg, "new log session(%d)", *pid);
+        LOG(msg);
+        // run
+        printf("Logger(%d): started work\n", *pid);
         run_logger(pr);
-        kill(getpid(), SIGTERM);
-        break;
-    }
-    // parent
-    default:
-        printf("Server(%d): create proccess(%d) for logger\n", getpid(), pid);
-        break;
-    }
-    return pid;
+        free_process(pr);
+    } else 
+        printf("Logger(%d): failed init\n", *pid);
+
+    printf("Logger(%d): process killed\n", *pid);
+    kill(getpid(), SIGTERM);
+}
+
+pid_t create_logger()
+{
+    pid_t lg = -1;
+    return create_process(NULL, &lg, body_logger);
 }
