@@ -2,21 +2,13 @@
 CC = gcc
 STD = -std=gnu99
 
-RFLAGS = -Wall -o
-DFLAGS = -Wall -g3
 # Postfix
 PF = -lrt -lpthread -lresolv -lcunit
-# Common
-CF = -D_XOPEN_SOURCE
 # All files 
 FILES = ../src/sockets.c ../src/smtp.c ../src/logger.c ../src/common.c ../src/process.c ../src/handlers.c
 TESTS = unit/test_main.c unit/test_handlers.c
 
-all: clean release
-
-release: server_r
-debug: server_d
-
+all: clean unit_tests
 
 # Launch tests
 run_valgrind:
