@@ -1,0 +1,27 @@
+#include "unit/test_main.h"
+
+
+/* need to install
+libcunit1 libcunit1-doc libcunit1-dev
+*/
+
+int main(void) {
+    if (CU_initialize_registry() != CUE_SUCCESS) {
+        printf("%s\n", CU_get_error_msg());
+        exit(CU_get_error());
+    }
+
+    CU_pSuite suite = CU_add_suite("suite_test", CU_myinit_suite, CU_myclear_suite);
+    if (suite == NULL) {
+        CU_cleanup_registry();
+        printf("%s\n", CU_get_error_msg());
+        exit(CU_get_error());
+    } else
+        add_mytests(suite);
+
+    CU_basic_set_mode(CU_BRM_VERBOSE);
+    CU_basic_run_tests();
+    printf("===============================UNIT_TESTS_START===============================\n");
+    CU_basic_show_failures(CU_get_failure_list());
+    printf("================================UNIT_TESTS_END================================\n");
+}
