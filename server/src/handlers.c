@@ -175,6 +175,7 @@ int TEXT_handle(struct cs_data_t* cs, char* msg)
         // printf("\n\n%s\n\n", cs->msg->body);
         // TODO: check fall connections
         save_message(cs->msg);
+        cs->state = SOCKET_STATE_WAIT;
         result = RSET_handle(cs, NULL); // call rset function after save message
     }
     return result;
